@@ -6,13 +6,24 @@ from typing import List, Tuple, Optional, ClassVar
 from urllib.parse import urlparse
 
 import boto3 as boto3
+import botocore
 
 from anypathlib.path_handlers.base_path_handler import BasePathHandler
 
 
 class S3Handler(BasePathHandler):
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', None)
+    MAX_POOL_CONNECTIONS = 50
     # Create a boto3 S3 client
-    s3_client: ClassVar[boto3.client] = boto3.client('s3')
+    s3_client: ClassVar[boto3.client] = boto3.client('s3', config=botocore.config.Config(
+        max_pool_connections=MAX_POOL_CONNECTIONS))
+
+    @classmethod
+    def refresh_credentials(cls):
+        if cls.AWS_ACCESS_KEY_ID is None:
+            cls.AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', None)
+            cls.s3_client = boto3.client('s3',
+                                         config=botocore.config.Config(max_pool_connections=cls.MAX_POOL_CONNECTIONS))
 
     @classmethod
     def relative_path(cls, url: str) -> str:
@@ -46,6 +57,7 @@ class S3Handler(BasePathHandler):
         parsed_uri = urlparse(s3_uri)
         bucket = parsed_uri.netloc
         key = parsed_uri.path.lstrip('/')
+        cls.refresh_credentials()
         return bucket, key
 
     @classmethod

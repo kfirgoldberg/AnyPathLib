@@ -39,6 +39,13 @@ class AzureHandler(BasePathHandler):
     DEFAULT_GROUP_NAME = os.environ.get('AZURE_RESOURCE_GROUP_NAME', None)
 
     @classmethod
+    def refresh_credentials(cls):
+        if cls.DEFAULT_SUBSCRIPTION_ID is None:
+            cls.DEFAULT_SUBSCRIPTION_ID = os.environ.get('AZURE_SUBSCRIPTION_ID', None)
+        if cls.DEFAULT_GROUP_NAME is None:
+            cls.DEFAULT_GROUP_NAME = os.environ.get('AZURE_RESOURCE_GROUP_NAME', None)
+
+    @classmethod
     def relative_path(cls, url: str) -> str:
         storage_path = cls.http_to_storage_params(url)
         return f'{storage_path.container_name}/{storage_path.blob_name}'
@@ -73,6 +80,7 @@ class AzureHandler(BasePathHandler):
     @classmethod
     def get_connection_string(cls, storage_account: str, subscription_id: Optional[str] = None,
                               resource_group_name: Optional[str] = None) -> str:
+        cls.refresh_credentials()
         account_key = cls.get_storage_account_key(storage_account_name=storage_account, subscription_id=subscription_id,
                                                   resource_group_name=resource_group_name)
         connection_string = (f"DefaultEndpointsProtocol=https;AccountName={storage_account};"
