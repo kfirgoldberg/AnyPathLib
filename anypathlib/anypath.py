@@ -94,6 +94,18 @@ class AnyPath:
     def remove(self):
         self.path_handler.remove(self.base_path)
 
+    @property
+    def parent(self) -> 'AnyPath':
+        return AnyPath(str(Path(self.base_path).parent))
+
+    @property
+    def stem(self) -> 'AnyPath':
+        return AnyPath(str(Path(self.base_path).stem))
+
+    @property
+    def name(self) -> 'AnyPath':
+        return AnyPath(str(Path(self.base_path).name))
+
     def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False) -> Path:
         if target_path is None:
             if self.is_dir():
