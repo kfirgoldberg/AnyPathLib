@@ -1,5 +1,5 @@
 azure-storage-blob>=12.14.0
-azure-identity>=1.15.0
+azure-identity>=1.10.0
 azure-mgmt-storage>=21.1.0
 boto3>=1.34.23
 loguru>=0.7.2

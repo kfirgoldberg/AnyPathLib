@@ -68,3 +68,15 @@ class LocalPathHandler(BasePathHandler):
     @classmethod
     def relative_path(cls, url: str) -> str:
         return Path(url).relative_to(Path(url).root).as_posix()
+
+    @classmethod
+    def parent(cls, url: str) -> str:
+        return Path(url).parent.as_posix()
+
+    @classmethod
+    def stem(cls, url: str) -> str:
+        return Path(url).stem
+
+    @classmethod
+    def name(cls, url: str) -> str:
+        return Path(url).name

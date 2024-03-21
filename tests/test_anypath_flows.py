@@ -1,7 +1,7 @@
 import pytest
 
 from anypathlib import PathType, AnyPath
-from tests.tests_paths import PATH_TYPE_TO_BASE_TEST_PATH, PATH_TYPE_TO_HANDLER
+from tests.tests_urls import PATH_TYPE_TO_BASE_TEST_PATH, PATH_TYPE_TO_HANDLER
 from fixtures_anypath import temp_dir_with_files, clean_remote_dir
 
 

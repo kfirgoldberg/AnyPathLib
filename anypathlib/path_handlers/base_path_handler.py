@@ -58,3 +58,18 @@ class BasePathHandler(ABC):
     @abstractmethod
     def relative_path(cls, url: str) -> str:
         pass
+
+    @classmethod
+    @abstractmethod
+    def parent(cls, url: str) -> str:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def name(cls, url: str) -> str:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def stem(cls, url: str) -> str:
+        pass

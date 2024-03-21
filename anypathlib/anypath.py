@@ -75,6 +75,8 @@ class AnyPath:
             base_path = base_path.replace('//', '/')
             if base_path.startswith('s3:/') and not base_path.startswith('s3://'):
                 base_path = base_path.replace('s3:/', 's3://')
+            if base_path[-1] == '/':
+                base_path = base_path[:-1]
         else:
             base_path = self._base_path
         return base_path
@@ -96,15 +98,15 @@ class AnyPath:
 
     @property
     def parent(self) -> 'AnyPath':
-        return AnyPath(str(Path(self.base_path).parent))
+        return AnyPath(self.path_handler.parent(self.base_path))
 
     @property
-    def stem(self) -> 'AnyPath':
-        return AnyPath(str(Path(self.base_path).stem))
+    def stem(self) -> str:
+        return self.path_handler.stem(self.base_path)
 
     @property
-    def name(self) -> 'AnyPath':
-        return AnyPath(str(Path(self.base_path).name))
+    def name(self) -> str:
+        return self.path_handler.name(self.base_path)
 
     def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False) -> Path:
         if target_path is None:
