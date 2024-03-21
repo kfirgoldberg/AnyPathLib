@@ -336,3 +336,32 @@ class AzureHandler(BasePathHandler):
             futures = [executor.submit(copy_blob, blob) for blob in blobs_to_rename]
             for future in futures:
                 future.result()  # Wait for each operation to complete
+
+    @classmethod
+    def parent(cls, url: str) -> str:
+        parsed_url = urlparse(url)
+        account_name = parsed_url.netloc.split('.')[0]
+        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
+        if blob_path_parts[-1] == "":
+            blob_path_parts = blob_path_parts[:-1]
+        blob_path = '/'.join(blob_path_parts[:-1])
+        parent_url = f'https://{account_name}.blob.core.windows.net/{container_name}/{blob_path}/'
+        return parent_url
+
+    @classmethod
+    def name(cls, url: str) -> str:
+        parsed_url = urlparse(url)
+        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
+        if blob_path_parts[-1] == "":
+            blob_path_parts = blob_path_parts[:-1]
+        blob_name = blob_path_parts[-1]
+        return blob_name
+
+    @classmethod
+    def stem(cls, url: str) -> str:
+        parsed_url = urlparse(url)
+        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
+        if blob_path_parts[-1] == "":
+            blob_path_parts = blob_path_parts[:-1]
+        blob_name = blob_path_parts[-1]
+        return Path(blob_name).stem

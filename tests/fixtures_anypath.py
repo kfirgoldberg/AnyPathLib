@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 
 from anypathlib import PathType
-from tests.tests_paths import PATH_TYPE_TO_BASE_TEST_PATH, PATH_TYPE_TO_HANDLER
+from tests.tests_urls import PATH_TYPE_TO_BASE_TEST_PATH, PATH_TYPE_TO_HANDLER
 
 
 def create_files_in_directory(directory: Path, n_files: int = 5):

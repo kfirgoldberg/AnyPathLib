@@ -1,6 +1,5 @@
 import os
-from asyncio import as_completed
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Tuple, Optional, ClassVar
 from urllib.parse import urlparse
@@ -42,6 +41,21 @@ class S3Handler(BasePathHandler):
             return True  # If the head object doesn't raise an error, it's a file
         except (cls.s3_client.exceptions.NoSuchKey, cls.s3_client.exceptions.ClientError):
             return False  # If a NoSuchKey error is raised, it's not a file
+
+    @classmethod
+    def parent(cls, url: str) -> str:
+        bucket, key = cls.get_bucket_and_key_from_uri(url)
+        return cls.get_full_path(bucket=bucket, key=Path(key).parent.as_posix())
+
+    @classmethod
+    def stem(cls, url: str) -> str:
+        bucket, key = cls.get_bucket_and_key_from_uri(url)
+        return Path(key).stem
+
+    @classmethod
+    def name(cls, url: str) -> str:
+        bucket, key = cls.get_bucket_and_key_from_uri(url)
+        return Path(key).name
 
     @classmethod
     def exists(cls, url: str) -> bool:
@@ -109,7 +123,7 @@ class S3Handler(BasePathHandler):
         # Prepare the list of s3_paths to download
         s3_paths: List[str] = [cls.get_full_path(bucket=bucket.name, key=obj.key) for obj in
                                bucket.objects.filter(Prefix=source_key)]
-        s3_paths = [s3_path for s3_path in s3_paths if s3_path != url]
+        s3_paths = [s3_path for s3_path in s3_paths if s3_path.rstrip('/') != url]
 
         def s3_path_to_local_file_path(s3_path: str, local_base_path: Path) -> Path:
             _, key = cls.get_bucket_and_key_from_uri(s3_path)
@@ -122,8 +136,7 @@ class S3Handler(BasePathHandler):
                                                  url=s3_path,
                                                  target_path=s3_path_to_local_file_path(s3_path=s3_path,
                                                                                         local_base_path=target_dir),
-                                                 force_overwrite=force_overwrite): s3_path
-                                 for s3_path in s3_paths}
+                                                 force_overwrite=force_overwrite): s3_path for s3_path in s3_paths}
             for future in as_completed(future_to_s3_path):
                 s3_path = future_to_s3_path[future]
                 try:
