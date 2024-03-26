@@ -128,6 +128,7 @@ export AWS_ACCESS_KEY_ID="your-key"
 > progress bar, etc.
 
 
+
 ## Contributors ✨
 Thanks goes to these wonderful people:
 
@@ -136,9 +137,9 @@ Thanks goes to these wonderful people:
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href=""><img src="" width="100px;" alt=""/><br /><sub><b>Yuval Shomer</b></sub></a><br /></td>
-    <td align="center"><a href=""><img src="" width="100px;" alt=""/><br /><sub><b>Jeremy Levy</b></sub></a><br /></td>
-    <td align="center"><a href=""><img src="" width="100px;" alt=""/><br /><sub><b>Ran Sagy</b></sub></a><br /></td>
+    <td align="center"><a href="https://github.com/JeremyLevyWsc"><img src="https://avatars.githubusercontent.com/u/141573308?v=4" width="100px;" alt=""/><br /><sub><b>Jeremy Levy</b></sub></a><br /><a href="#design-JeremyLevyWsc" title="Design">🎨</a> <a href="#ideas-JeremyLevyWsc" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/shomerYu"><img src="https://avatars.githubusercontent.com/u/49059794?v=4" width="100px;" alt=""/><br /><sub><b>Yuval Shomer</b></sub></a><br /><a href="#design-shomerYu" title="Design">🎨</a> <a href="#ideas-shomerYu" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/ransagy"><img src="https://avatars.githubusercontent.com/u/6785058?v=4" width="100px;" alt=""/><br /><sub><b>Ran Sagy</b></sub></a><br /><a href="#ideas-ransagy" title="Ideas, Planning, & Feedback">🤔</a></td>
     
 
   </tr>
