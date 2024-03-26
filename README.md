@@ -1,5 +1,13 @@
-<p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/anypathlib_logo.png" alt="logo" width="70%" /></p>
-by <p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/wsc_logo.png" alt="wsc_logo" width="40%" /></p>
+<p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/anypathlib_logo.png?token=GHSAT0AAAAAACPDFWKMV34BIYZ4TZGKFPJGZQDF5GQ" alt="logo" width="70%" /></p>
+
+
+<div align="center">
+
+[![wsc_logo](https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/wsc_logo.png?token=GHSAT0AAAAAACPDFWKNF5LS5RODGRJJUJZWZQDF5TQ)](https://wsc-sports.com/)
+
+</div>
+
+
 # AnyPathLib - Crossing Cloud Borders With a Simple API
     
 <p align="center">
@@ -20,7 +28,7 @@ underlying details.
 Operations can be optimized per-backend and the library is easily extendable to support additional cloud storage
 providers.
 
-## Getting Started With `AnyPathLib` in 3 easy examples ️🛣️
+## Getting Started With `AnyPathLib` with 3 easy examples ️🛣️
 
 ### ️🛣️ 1/3 Copying a file or directory from anywhere to anywhere ️🛣️
 
