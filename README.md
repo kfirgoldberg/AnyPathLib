@@ -1,5 +1,5 @@
-<p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/anypathlib/kfir/adding_readme/docs/anypathlib_logo.png" alt="logo" width="70%" /></p>
-by <p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/anypathlib/kfir/adding_readme/docs/wsc_logo.png" alt="wsc_logo" width="40%" /></p>
+<p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/anypathlib_logo.png" alt="logo" width="70%" /></p>
+by <p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/wsc_logo.png" alt="wsc_logo" width="40%" /></p>
 # AnyPathLib - Crossing Cloud Borders With a Simple API
     
 <p align="center">
