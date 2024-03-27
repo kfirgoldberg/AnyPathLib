@@ -14,7 +14,7 @@
     <a href="https://badge.fury.io/py/anypathlib"><img src="https://badge.fury.io/py/anypathlib.svg" alt="PyPI version" height="18"></a>
     <a href="https://pepy.tech/project/anypathlib"><img src="https://pepy.tech/badge/anypathlib" alt="Downloads" height="18"></a>
     <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-3-orange.svg" alt="All Contributors" height="18"></a>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" height="18"></a>
+    <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0" height="18"></a>
 </p>
 
 
