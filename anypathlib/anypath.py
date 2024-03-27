@@ -15,7 +15,7 @@ class AnyPath:
     PATH_HANDLERS: Dict[PathType, BasePathHandler] = {PathType.local: LocalPathHandler,
                                                       PathType.s3: S3Handler,
                                                       PathType.azure: AzureHandler}
-    LOCAL_CACHE_PATH = Path(tempfile.NamedTemporaryFile().name).parent / 'AnyPath'
+    LOCAL_CACHE_PATH = Path(tempfile.gettempdir()) / 'AnyPath'
 
     def __init__(self, base_path: Union[Path, str]):
         if type(base_path) is str:
