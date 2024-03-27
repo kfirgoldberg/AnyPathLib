@@ -137,8 +137,8 @@ Thanks goes to these wonderful people:
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/JeremyLevyWsc"><img src="https://avatars.githubusercontent.com/u/141573308?v=4" width="100px;" alt=""/><br /><sub><b>Jeremy Levy</b></sub></a><br /><a href="#design-JeremyLevyWsc" title="Design">🎨</a> <a href="#ideas-JeremyLevyWsc" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/shomerYu"><img src="https://avatars.githubusercontent.com/u/49059794?v=4" width="100px;" alt=""/><br /><sub><b>Yuval Shomer</b></sub></a><br /><a href="#design-shomerYu" title="Design">🎨</a> <a href="#ideas-shomerYu" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/jeremy-levy"><img src="https://avatars.githubusercontent.com/u/61752548?v=4" width="100px;" alt=""/><br /><sub><b>Jeremy Levy</b></sub></a><br /><a href="#design-jeremy-levy" title="Design">🎨</a> <a href="#ideas-jeremy-levy" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/ransagy"><img src="https://avatars.githubusercontent.com/u/6785058?v=4" width="100px;" alt=""/><br /><sub><b>Ran Sagy</b></sub></a><br /><a href="#ideas-ransagy" title="Ideas, Planning, & Feedback">🤔</a></td>
     
 
