@@ -7,23 +7,23 @@
 
 </div>
 
-
 # AnyPathLib - Crossing Cloud Borders With a Simple API
-    
+
 <p align="center">
     <a href="https://badge.fury.io/py/anypathlib"><img src="https://badge.fury.io/py/anypathlib.svg" alt="PyPI version" height="18"></a>
     <a href="https://pepy.tech/project/anypathlib"><img src="https://pepy.tech/badge/anypathlib" alt="Downloads" height="18"></a>
-    <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-3-orange.svg" alt="All Contributors" height="18"></a>
+    <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-2-orange.svg" alt="All Contributors" height="18"></a>
     <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0" height="18"></a>
 </p>
 
 
-Welcome to AnyPathLib, a Python library designed to allow hassle-free file operations across different cloud and local storage
-
+Welcome to AnyPathLib, a Python library designed to allow hassle-free file operations across different cloud and local
+storage
 
 ## Why `AnyPathLib`?
 
-With `AnyPathLib` you can write the same code to handle files across different storage systems, without worrying about the
+With `AnyPathLib` you can write the same code to handle files across different storage systems, without worrying about
+the
 underlying details.
 Operations can be optimized per-backend and the library is easily extendable to support additional cloud storage
 providers.
@@ -61,7 +61,7 @@ local_dir_path = my_dir.copy()
 
 my_file = AnyPath("s3://bucket/path/to/file.txt")
 local_file_path = my_file.copy()
-local_file_path = my_file.copy(force_overwrite=False) # Returns the path of the previously downloaded file
+local_file_path = my_file.copy(force_overwrite=False)  # Returns the path of the previously downloaded file
 ```
 
 ### 🛣️ 3/3 A simplified pathlib-like Interface 🛣️
@@ -127,9 +127,8 @@ export AWS_ACCESS_KEY_ID="your-key"
 
 > progress bar, etc.
 
-
-
 ## Contributors ✨
+
 Thanks goes to these wonderful people:
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
@@ -139,8 +138,7 @@ Thanks goes to these wonderful people:
   <tr>
     <td align="center"><a href="https://github.com/shomerYu"><img src="https://avatars.githubusercontent.com/u/49059794?v=4" width="100px;" alt=""/><br /><sub><b>Yuval Shomer</b></sub></a><br /><a href="#design-shomerYu" title="Design">🎨</a> <a href="#ideas-shomerYu" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/jeremy-levy"><img src="https://avatars.githubusercontent.com/u/61752548?v=4" width="100px;" alt=""/><br /><sub><b>Jeremy Levy</b></sub></a><br /><a href="#design-jeremy-levy" title="Design">🎨</a> <a href="#ideas-jeremy-levy" title="Ideas, Planning, & Feedback">🤔</a></td>
-    <td align="center"><a href="https://github.com/ransagy"><img src="https://avatars.githubusercontent.com/u/6785058?v=4" width="100px;" alt=""/><br /><sub><b>Ran Sagy</b></sub></a><br /><a href="#ideas-ransagy" title="Ideas, Planning, & Feedback">🤔</a></td>
-    
+
 
   </tr>
 </table>
