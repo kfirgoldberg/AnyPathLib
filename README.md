@@ -1,9 +1,9 @@
-<p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/anypathlib_logo.png?token=GHSAT0AAAAAACPDFWKMV34BIYZ4TZGKFPJGZQDF5GQ" alt="logo" width="70%" /></p>
+<p align="center"><img src="https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/master/docs/anypathlib_logo.png" alt="logo" width="70%" /></p>
 
 
 <div align="center">
 
-[![wsc_logo](https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/kfir/adding_readme/docs/wsc_logo.png?token=GHSAT0AAAAAACPDFWKNF5LS5RODGRJJUJZWZQDF5TQ)](https://wsc-sports.com/)
+[![wsc_logo](https://raw.githubusercontent.com/kfirgoldberg/AnyPathLib/master/docs/wsc_logo.png)](https://wsc-sports.com/)
 
 </div>
 
