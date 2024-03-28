@@ -30,9 +30,10 @@ setuptools.setup(
     url="",
     packages=packages,
     package_data={"AnyPathLib": ["py.typed"]},
+    license='Apache License 2.0',
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        'License :: OSI Approved :: Apache Software License',
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.7",
