@@ -1,14 +1,14 @@
 import pytest
 
 from anypathlib import PathType, AnyPath
-from tests.tests_urls import PATH_TYPE_TO_BASE_TEST_PATH, PATH_TYPE_TO_HANDLER
+from tests.tests_urls import PATH_TYPE_TO_HANDLER
 from fixtures_anypath import temp_dir_with_files, clean_remote_dir
 
 
 @pytest.mark.usefixtures("temp_dir_with_files", "clean_remote_dir")
 @pytest.mark.parametrize("path_type", [PathType.azure, PathType.s3, PathType.local])
 def test_exists_copy_exists_listdir_remove_exists(path_type: PathType, temp_dir_with_files, clean_remote_dir):
-    remote_base_dir = PATH_TYPE_TO_BASE_TEST_PATH[path_type]
+    remote_base_dir = clean_remote_dir
     local_dir_path, local_dir_files = temp_dir_with_files
     remote_dir = remote_base_dir + 'test_exists_copy_exists_listdir_remove_exists/'
     local_any_path = AnyPath(local_dir_path)
@@ -17,7 +17,7 @@ def test_exists_copy_exists_listdir_remove_exists(path_type: PathType, temp_dir_
     local_any_path.copy(target=target_any_path, force_overwrite=True)
     assert target_any_path.exists()
     target_dir_files = target_any_path.listdir()
-    assert sorted([remote_file.base_path.split('/')[-1] for remote_file in target_dir_files]) == sorted(
+    assert sorted([remote_file.name for remote_file in target_dir_files]) == sorted(
         [local_dir_file.name for local_dir_file in local_dir_files])
     target_any_path.remove()
     assert not target_any_path.exists()
@@ -59,7 +59,7 @@ def test_is_file(path_type: PathType, temp_dir_with_files, clean_remote_dir):
 
 @pytest.mark.usefixtures("clean_remote_dir")
 @pytest.mark.parametrize("path_type", [PathType.azure, PathType.s3, PathType.local])
-def test_caching(path_type: PathType, clean_remote_dir):
+def test_caching(path_type: PathType, temp_dir_with_files, clean_remote_dir):
     cloud_handler = PATH_TYPE_TO_HANDLER[path_type]
     local_dir_path, local_dir_files = temp_dir_with_files
     remote_dir = clean_remote_dir
