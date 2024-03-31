@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from urllib.parse import urlparse
 
+from tqdm import tqdm
 from azure.core.exceptions import ResourceNotFoundError
 
 from azure.identity import DefaultAzureCredential
@@ -250,7 +251,8 @@ class AzureHandler(BasePathHandler):
         container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
         local_paths = []
         blob_urls = []
-        for blob in container_client.list_blobs(name_starts_with=azure_storage_path.blob_name):
+        for blob in tqdm(container_client.list_blobs(name_starts_with=azure_storage_path.blob_name),
+                         desc='Downloading directory'):
             blob_url = AzureStoragePath(storage_account=azure_storage_path.storage_account,
                                         container_name=azure_storage_path.container_name, blob_name=blob.name,
                                         connection_string=azure_storage_path.connection_string).http_url
@@ -302,8 +304,10 @@ class AzureHandler(BasePathHandler):
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(upload_file_wrapper, str(local_path), blob_name) for local_path, blob_name in
                        files_to_upload]
-            for future in futures:
-                future.result()  # Wait for each upload to complete
+            with tqdm(total=len(files_to_upload), desc='Uploading directory') as pbar:
+                for future in futures:
+                    future.result()  # Wait for each upload to complete
+                    pbar.update(1)
 
     @classmethod
     def copy(cls, source_url: str, target_url: str):
