@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import boto3 as boto3
 import botocore
+from tqdm import tqdm
 
 from anypathlib.path_handlers.base_path_handler import BasePathHandler
 
@@ -137,14 +138,19 @@ class S3Handler(BasePathHandler):
                                                  target_path=s3_path_to_local_file_path(s3_path=s3_path,
                                                                                         local_base_path=target_dir),
                                                  force_overwrite=force_overwrite): s3_path for s3_path in s3_paths}
-            for future in as_completed(future_to_s3_path):
-                s3_path = future_to_s3_path[future]
-                try:
-                    local_path = future.result()
-                    if local_path:
-                        all_files.append(local_path)
-                except Exception as exc:
-                    print(f'{s3_path} generated an exception: {exc}')
+
+            with tqdm(total=len(s3_paths), desc='Downloading directory') as pbar:
+                for future in as_completed(future_to_s3_path):
+                    s3_path = future_to_s3_path[future]
+                    try:
+                        local_path = future.result()
+                        if local_path:
+                            all_files.append(local_path)
+                    except Exception as exc:
+                        print(f'{s3_path} generated an exception: {exc}')
+
+                    pbar.update(1)
+
         return target_dir, all_files
 
     @classmethod
@@ -155,7 +161,7 @@ class S3Handler(BasePathHandler):
     @classmethod
     def upload_directory(cls, local_dir: Path, target_url: str):
         bucket, key = cls.get_bucket_and_key_from_uri(target_url)
-        for root, dirs, files in os.walk(local_dir):
+        for root, dirs, files in tqdm(os.walk(local_dir), desc='Uploading directory'):
             for file in files:
                 local_path = os.path.join(root, file)
                 s3_key = os.path.join(key, os.path.relpath(local_path, local_dir))
