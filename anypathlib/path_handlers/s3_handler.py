@@ -158,7 +158,7 @@ class S3Handler(BasePathHandler):
         for root, dirs, files in os.walk(local_dir):
             for file in files:
                 local_path = os.path.join(root, file)
-                s3_key = os.path.join(key, os.path.relpath(local_path, local_dir))
+                s3_key = f'{key}/{os.path.relpath(local_path, local_dir)}'
                 cls.s3_client.upload_file(local_path, bucket, s3_key)
 
     @classmethod
