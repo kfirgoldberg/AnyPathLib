@@ -21,7 +21,8 @@ class BasePathHandler(ABC):
 
     @classmethod
     @abstractmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path) -> Optional[Tuple[Path, List[Path]]]:
+    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path,
+                           verbose: bool) -> Optional[Tuple[Path, List[Path]]]:
         pass
 
     @classmethod
@@ -31,7 +32,7 @@ class BasePathHandler(ABC):
 
     @classmethod
     @abstractmethod
-    def upload_directory(cls, local_dir: Path, target_url: str):
+    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
         pass
 
     @classmethod

@@ -112,7 +112,7 @@ class S3Handler(BasePathHandler):
         bucket.objects.filter(Prefix=key).delete()
 
     @classmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path) -> \
+    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool) -> \
             Optional[Tuple[Path, List[Path]]]:
 
         s3_resource = boto3.resource('s3')
@@ -139,7 +139,7 @@ class S3Handler(BasePathHandler):
                                                                                         local_base_path=target_dir),
                                                  force_overwrite=force_overwrite): s3_path for s3_path in s3_paths}
 
-            with tqdm(total=len(s3_paths), desc='Downloading directory') as pbar:
+            def process_futures():
                 for future in as_completed(future_to_s3_path):
                     s3_path = future_to_s3_path[future]
                     try:
@@ -149,7 +149,15 @@ class S3Handler(BasePathHandler):
                     except Exception as exc:
                         print(f'{s3_path} generated an exception: {exc}')
 
-                    pbar.update(1)
+                    yield None
+
+            if verbose:
+                with tqdm(total=len(s3_paths), desc='Downloading directory') as pbar:
+                    for _ in process_futures():
+                        pbar.update(1)
+            else:
+                for _ in process_futures():
+                    pass
 
         return target_dir, all_files
 
@@ -159,13 +167,27 @@ class S3Handler(BasePathHandler):
         cls.s3_client.upload_file(local_path, bucket, key)
 
     @classmethod
-    def upload_directory(cls, local_dir: Path, target_url: str):
+    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
         bucket, key = cls.get_bucket_and_key_from_uri(target_url)
-        for root, dirs, files in tqdm(os.walk(local_dir), desc='Uploading directory'):
+
+        total_files = 0
+        if verbose:
+            for root, dirs, files in os.walk(local_dir):
+                total_files += len(files)
+
+        if verbose:
+            progress_bar = tqdm(os.walk(local_dir), desc='Uploading directory', total=total_files)
+        else:
+            progress_bar = os.walk(local_dir)
+
+        for root, dirs, files in progress_bar:
             for file in files:
                 local_path = os.path.join(root, file)
                 s3_key = f'{key}/{os.path.relpath(local_path, local_dir)}'
                 cls.s3_client.upload_file(local_path, bucket, s3_key)
+
+            if verbose:
+                progress_bar.update(len(files))
 
     @classmethod
     def copy(cls, source_url: str, target_url: str):

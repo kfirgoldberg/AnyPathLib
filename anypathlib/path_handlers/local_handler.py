@@ -32,7 +32,7 @@ class LocalPathHandler(BasePathHandler):
         cls.copy_path(url=Path(local_path).absolute().as_posix(), target_path=Path(target_url), force_overwrite=True)
 
     @classmethod
-    def upload_directory(cls, local_dir: Path, target_url: str):
+    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
         cls.copy_path(url=local_dir.absolute().as_posix(), target_path=Path(target_url), force_overwrite=True)
 
     @classmethod
@@ -52,7 +52,7 @@ class LocalPathHandler(BasePathHandler):
             shutil.copy(local_path, target_path)
 
     @classmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path) -> \
+    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool) -> \
             Optional[Tuple[Path, List[Path]]]:
         cls.copy_path(url=url, target_path=target_dir, force_overwrite=force_overwrite)
         return target_dir, [p for p in target_dir.rglob('*')]

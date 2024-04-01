@@ -241,7 +241,7 @@ class AzureHandler(BasePathHandler):
                     raise e
 
     @classmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path) -> \
+    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool) -> \
             Optional[Tuple[Path, List[Path]]]:
         """Download a directory (all blobs with the same prefix) from Azure Blob Storage."""
         assert target_dir.is_dir()
@@ -251,8 +251,15 @@ class AzureHandler(BasePathHandler):
         container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
         local_paths = []
         blob_urls = []
-        for blob in tqdm(container_client.list_blobs(name_starts_with=azure_storage_path.blob_name),
-                         desc='Downloading directory'):
+
+        if verbose:
+            container_iterator = container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)
+            progress_bar = tqdm(container_iterator, desc='Downloading directory',
+                                total=len(list(container_iterator)))
+        else:
+            progress_bar = container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)
+
+        for blob in progress_bar:
             blob_url = AzureStoragePath(storage_account=azure_storage_path.storage_account,
                                         container_name=azure_storage_path.container_name, blob_name=blob.name,
                                         connection_string=azure_storage_path.connection_string).http_url
@@ -275,7 +282,7 @@ class AzureHandler(BasePathHandler):
         return local_paths[0].parent, local_paths
 
     @classmethod
-    def upload_directory(cls, local_dir: Path, target_url: str):
+    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
         """Upload a directory to Azure Blob Storage."""
         azure_storage_path = cls.http_to_storage_params(target_url)
         blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
@@ -304,10 +311,14 @@ class AzureHandler(BasePathHandler):
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(upload_file_wrapper, str(local_path), blob_name) for local_path, blob_name in
                        files_to_upload]
-            with tqdm(total=len(files_to_upload), desc='Uploading directory') as pbar:
+            if verbose:
+                with tqdm(total=len(files_to_upload), desc='Uploading directory') as pbar:
+                    for future in futures:
+                        future.result()  # Wait for each upload to complete
+                        pbar.update(1)
+            else:
                 for future in futures:
                     future.result()  # Wait for each upload to complete
-                    pbar.update(1)
 
     @classmethod
     def copy(cls, source_url: str, target_url: str):
