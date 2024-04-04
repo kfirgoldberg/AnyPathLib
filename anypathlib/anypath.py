@@ -109,7 +109,7 @@ class AnyPath:
         return self.path_handler.name(self.base_path)
 
     def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False,
-                         verbose: bool = True) -> Optional[Path]:
+                         verbose: bool = False) -> Optional[Path]:
         if target_path is None:
             if self.is_dir():
                 valid_target_path = Path(tempfile.mkdtemp())
@@ -156,7 +156,7 @@ class AnyPath:
             local_cache_path.parent.mkdir(exist_ok=True, parents=True)
         return AnyPath(local_cache_path)
 
-    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True, verbose: bool = True) -> 'AnyPath':
+    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True, verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
         if target is None:
             valid_target = self.__get_local_cache_path()

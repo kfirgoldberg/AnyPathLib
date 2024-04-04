@@ -60,7 +60,7 @@ def test_is_file(path_type: PathType, temp_dir_with_files, clean_remote_dir):
 @pytest.mark.usefixtures("clean_remote_dir")
 @pytest.mark.parametrize("path_type", [PathType.azure, PathType.s3, PathType.local])
 @pytest.mark.parametrize("verbose", [True, False])
-def test_caching(path_type: PathType, temp_dir_with_files, clean_remote_dir, verbose: bool):
+def test_caching(path_type: PathType, temp_dir_with_files, clean_remote_dir, verbose:bool):
     cloud_handler = PATH_TYPE_TO_HANDLER[path_type]
     local_dir_path, local_dir_files = temp_dir_with_files
     remote_dir = clean_remote_dir

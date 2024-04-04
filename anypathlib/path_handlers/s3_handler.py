@@ -167,7 +167,7 @@ class S3Handler(BasePathHandler):
         cls.s3_client.upload_file(local_path, bucket, key)
 
     @classmethod
-    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
+    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool = False):
         bucket, key = cls.get_bucket_and_key_from_uri(target_url)
 
         total_files = 0
