@@ -108,7 +108,8 @@ class AnyPath:
     def name(self) -> str:
         return self.path_handler.name(self.base_path)
 
-    def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False) -> Path:
+    def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False,
+                         verbose: bool = False) -> Optional[Path]:
         if target_path is None:
             if self.is_dir():
                 valid_target_path = Path(tempfile.mkdtemp())
@@ -129,15 +130,21 @@ class AnyPath:
             return valid_target_path
         else:
             if self.is_dir():
-                local_path, _ = self.path_handler.download_directory(url=self.base_path,
-                                                                     force_overwrite=force_overwrite,
-                                                                     target_dir=valid_target_path)
+                result = self.path_handler.download_directory(url=self.base_path,
+                                                              force_overwrite=force_overwrite,
+                                                              target_dir=valid_target_path,
+                                                              verbose=verbose)
+                if result is not None:
+                    local_path, _ = result
+                else:
+                    return None
 
             else:
                 local_path = self.path_handler.download_file(url=self.base_path, force_overwrite=force_overwrite,
                                                              target_path=valid_target_path)
 
-        assert local_path == valid_target_path, f'local_path {local_path} is not equal to valid_target_path {valid_target_path}'
+        assert local_path == valid_target_path, \
+            f'local_path {local_path} is not equal to valid_target_path {valid_target_path}'
         return Path(local_path)
 
     def __get_local_cache_path(self) -> 'AnyPath':
@@ -149,26 +156,30 @@ class AnyPath:
             local_cache_path.parent.mkdir(exist_ok=True, parents=True)
         return AnyPath(local_cache_path)
 
-    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True) -> 'AnyPath':
+    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True, verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
         if target is None:
             valid_target = self.__get_local_cache_path()
         else:
             valid_target = target
         if valid_target.is_local:
-            self.__get_local_path(target_path=Path(valid_target.base_path), force_overwrite=force_overwrite)
+            self.__get_local_path(target_path=Path(valid_target.base_path), force_overwrite=force_overwrite,
+                                  verbose=verbose)
         else:
             if valid_target.is_s3 and self.is_s3:
                 S3Handler.copy(source_url=self.base_path, target_url=valid_target.base_path)
             elif valid_target.is_azure and self.is_azure:
                 AzureHandler.copy(source_url=self.base_path, target_url=valid_target.base_path)
             else:
-                # valid_target and source are different, so we need to download the source and upload it to the valid_target
+                # valid_target and source are different,
+                # so we need to download the source and upload it to the valid_target
+
                 local_path = Path(self.base_path) if self.is_local else self.__get_local_path(
-                    force_overwrite=force_overwrite)
+                    force_overwrite=force_overwrite, verbose=verbose)
                 target_path_handler = valid_target.path_handler
                 if self.is_dir():
-                    target_path_handler.upload_directory(local_dir=local_path, target_url=valid_target.base_path)
+                    target_path_handler.upload_directory(local_dir=local_path, target_url=valid_target.base_path,
+                                                         verbose=verbose)
                 else:
                     target_path_handler.upload_file(local_path=str(local_path), target_url=valid_target.base_path)
         return valid_target

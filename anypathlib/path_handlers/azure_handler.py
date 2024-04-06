@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from urllib.parse import urlparse
 
+from tqdm import tqdm
 from azure.core.exceptions import ResourceNotFoundError
 
 from azure.identity import DefaultAzureCredential
@@ -240,7 +241,7 @@ class AzureHandler(BasePathHandler):
                     raise e
 
     @classmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path) -> \
+    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool) -> \
             Optional[Tuple[Path, List[Path]]]:
         """Download a directory (all blobs with the same prefix) from Azure Blob Storage."""
         assert target_dir.is_dir()
@@ -249,31 +250,28 @@ class AzureHandler(BasePathHandler):
         blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
         container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
         local_paths = []
-        blob_urls = []
-        for blob in container_client.list_blobs(name_starts_with=azure_storage_path.blob_name):
+
+        if verbose:
+            container_iterator = container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)
+            progress_bar = tqdm(container_iterator, desc='Downloading directory',
+                                total=len(list(container_iterator)))
+        else:
+            progress_bar = container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)
+
+        for blob in progress_bar:
             blob_url = AzureStoragePath(storage_account=azure_storage_path.storage_account,
                                         container_name=azure_storage_path.container_name, blob_name=blob.name,
                                         connection_string=azure_storage_path.connection_string).http_url
-            local_target = target_dir / blob.name
+            local_target = target_dir / Path(blob_url).relative_to(Path(url))
             local_path = cls.download_file(url=blob_url, force_overwrite=force_overwrite, target_path=local_target)
             assert local_path is not None, f'could not download from {url}'
             local_paths.append(Path(local_path))
-            blob_urls.append(blob_url)
         if len(local_paths) == 0:
             return None
-        if target_dir is not None:
-            local_files = []
-            for blob_url, local_file in zip(blob_urls, local_paths):
-                relative_path = Path(blob_url).relative_to(Path(url))
-                target_path = target_dir / relative_path
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(local_file, target_path)
-                local_files.append(target_path)
-            return target_dir, local_files
         return local_paths[0].parent, local_paths
 
     @classmethod
-    def upload_directory(cls, local_dir: Path, target_url: str):
+    def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
         """Upload a directory to Azure Blob Storage."""
         azure_storage_path = cls.http_to_storage_params(target_url)
         blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
@@ -302,8 +300,14 @@ class AzureHandler(BasePathHandler):
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(upload_file_wrapper, str(local_path), blob_name) for local_path, blob_name in
                        files_to_upload]
-            for future in futures:
-                future.result()  # Wait for each upload to complete
+            if verbose:
+                with tqdm(total=len(files_to_upload), desc='Uploading directory') as pbar:
+                    for future in futures:
+                        future.result()  # Wait for each upload to complete
+                        pbar.update(1)
+            else:
+                for future in futures:
+                    future.result()  # Wait for each upload to complete
 
     @classmethod
     def copy(cls, source_url: str, target_url: str):

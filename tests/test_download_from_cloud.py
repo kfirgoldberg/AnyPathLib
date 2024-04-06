@@ -12,7 +12,8 @@ def test_copy_to_local_from_cloud(path_type: PathType, temp_dir_with_files, temp
     local_dir_path, local_dir_files = temp_dir_with_files
 
     remote_dir = clean_remote_dir
-    cloud_handler.upload_directory(local_dir=local_dir_path, target_url=remote_dir)
-    AnyPath(remote_dir).copy(target=AnyPath(temp_local_dir), force_overwrite=True)
-    cloud_handler.remove(remote_dir)
-    assert sorted([fn for fn in temp_local_dir.iterdir()]) == sorted([fn for fn in temp_local_dir.iterdir()])
+    cloud_handler.upload_directory(local_dir=local_dir_path, target_url=remote_dir, verbose=False)
+    local_download_dir = AnyPath(remote_dir).copy(target=AnyPath(temp_local_dir), force_overwrite=True)
+    remote_files = AnyPath(remote_dir).listdir()
+    assert sorted([fn.name for fn in remote_files]) == sorted(
+        [fn.name for fn in local_download_dir.listdir()])
