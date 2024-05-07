@@ -43,6 +43,9 @@ setuptools.setup(
         "azure-mgmt-storage>=21.1.0",
         "boto3>=1.34.23",
         "loguru>=0.7.2",
+        'Click'
     ],
     setup_requires=["pre-commit"],
+    py_modules=["anypathlib"],
+    entry_points={"console_scripts": ["anypathlib = anypathlib.cli:cli"]}
 )
