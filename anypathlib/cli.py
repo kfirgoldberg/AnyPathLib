@@ -14,22 +14,23 @@ def cli():
 @click.option('-f', '--force/--no-force', is_flag=True, default=True, help='Force overwrite flag')
 def copy(input_path, output_path, verbose, force):
     """Copy files from input to output path. """
-    AnyPath(input_path).copy(target=AnyPath(output_path) if output_path else None,
-                             verbose=verbose, force_overwrite=force)
+    target_path = AnyPath(input_path).copy(target=AnyPath(output_path) if output_path else None,
+                                           verbose=verbose, force_overwrite=force)
+    click.echo(f'Copied Successfully to {target_path}')
 
 
 @click.command()
 @click.option('-p', '--path', required=True, type=click.STRING, help='Path to check')
 def exists(path):
     """Check if the path exists. """
-    print(AnyPath(path).exists())
+    click.echo(AnyPath(path).exists())
 
 
 @click.command()
 @click.option('-p', 'path', required=True, type=click.STRING, help='Path to list')
 def listdir(path):
     """List the directory. """
-    print(AnyPath(path).listdir())
+    click.echo(AnyPath(path).listdir())
 
 
 @click.command()
