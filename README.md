@@ -78,6 +78,12 @@ my_file.is_dir()  # False
 my_file.remove()
 ```
 
+### CLI Usage
+
+`AnyPathLib` also comes with a CLI tool that allows you to perform file operations from the command line.
+You can run `anypathlib --help` to get a list of available commands and options.
+
+
 ### Key Features
 
 * **Unified, Cloud Agnostic, API**: Perform file operations across different storage backends using the same set of
