@@ -1,12 +1,11 @@
-import ast
 from pathlib import Path
 
 import pytest
 
 from anypathlib.cli import cli
-from fixtures_anypath import temp_dir_with_files, cli_runner, temp_local_dir
+from tests.fixtures_anypath import temp_dir_with_files, cli_runner, temp_local_dir
 
-FOLDER1_NAME = 'folder1'
+FOLDER_NAME = 'folder'
 
 
 @pytest.mark.usefixtures("temp_dir_with_files", 'cli_runner')
@@ -14,7 +13,7 @@ def test_copy_command_success(temp_dir_with_files, cli_runner):
     local_dir_path, local_dir_files = temp_dir_with_files
     input_file = local_dir_files[0]
 
-    output_path = local_dir_path / FOLDER1_NAME / input_file.name
+    output_path = local_dir_path / FOLDER_NAME / input_file.name
 
     result = cli_runner.invoke(cli, ['copy', '-i', local_dir_files[0], '-o', output_path])
     assert result.exit_code == 0
