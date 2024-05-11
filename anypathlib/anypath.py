@@ -17,13 +17,15 @@ class AnyPath:
                                                       PathType.azure: AzureHandler}
     LOCAL_CACHE_PATH = Path(tempfile.gettempdir()) / 'AnyPath'
 
-    def __init__(self, base_path: Union[Path, str]):
+    def __init__(self, base_path: Union[Path, str, 'AnyPath']):
         if type(base_path) is str:
             self._base_path = base_path
         elif issubclass(type(base_path), PurePath):
             self._base_path = base_path.absolute().as_posix()
+        elif type(base_path) is AnyPath:
+            self._base_path = base_path.base_path
         else:
-            raise ValueError(f'base_path must be of type str or Path, got {type(base_path)}')
+            raise ValueError(f'base_path must be of type str, Path or AnyPath, got {type(base_path)}')
         self.path_type = self.get_path_type(self._base_path)
         self.path_handler = self.PATH_HANDLERS[self.path_type]
 
@@ -77,6 +79,8 @@ class AnyPath:
                 base_path = base_path.replace('s3:/', 's3://')
             if base_path[-1] == '/':
                 base_path = base_path[:-1]
+        elif self.path_type == PathType.local:
+            base_path = Path(self._base_path).as_posix()
         else:
             base_path = self._base_path
         return base_path
@@ -156,12 +160,13 @@ class AnyPath:
             local_cache_path.parent.mkdir(exist_ok=True, parents=True)
         return AnyPath(local_cache_path)
 
-    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True, verbose: bool = False) -> 'AnyPath':
+    def copy(self, target: Optional[Union[str, Path, 'AnyPath']] = None, force_overwrite: bool = True,
+             verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
         if target is None:
             valid_target = self.__get_local_cache_path()
         else:
-            valid_target = target
+            valid_target = AnyPath(target)
         if valid_target.is_local:
             self.__get_local_path(target_path=Path(valid_target.base_path), force_overwrite=force_overwrite,
                                   verbose=verbose)
