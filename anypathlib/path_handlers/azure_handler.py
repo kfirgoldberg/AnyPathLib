@@ -1,3 +1,4 @@
+import fnmatch
 import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
@@ -369,3 +370,38 @@ class AzureHandler(BasePathHandler):
             blob_path_parts = blob_path_parts[:-1]
         blob_name = blob_path_parts[-1]
         return Path(blob_name).stem
+
+    @classmethod
+    def _list_blobs(cls, azure_storage_path: AzureStoragePath, all_blobs: bool = False) -> List[str]:
+        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
+        container_client = blob_service_client.get_container_client(azure_storage_path.container_name)
+        if all_blobs:
+            return [blob.name for blob in container_client.list_blobs()]
+        else:
+            return [blob.name for blob in container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)]
+
+    @classmethod
+    def iterdir(cls, url: str) -> List[str]:
+        storage_path = cls.http_to_storage_params(url)
+        blobs = cls._list_blobs(storage_path)
+        unique_directories = list(
+            set([f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}"
+                 for blob in blobs]))
+        return list(unique_directories)
+
+    @classmethod
+    def glob(cls, url: str, pattern: str) -> List[str]:
+        storage_path = cls.http_to_storage_params(url)
+        blobs = cls._list_blobs(storage_path)
+        matched_blobs = [blob for blob in blobs if fnmatch.fnmatch(blob, f"{storage_path.blob_name}/{pattern}")]
+        return [f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}" for
+                blob in matched_blobs]
+
+    @classmethod
+    def rglob(cls, url: str, pattern: str) -> List[str]:
+        storage_path = cls.http_to_storage_params(url)
+        all_blobs = cls._list_blobs(storage_path, all_blobs=True)
+        pattern = f"{storage_path.blob_name}/**/{pattern}"  # Using globstar for recursive pattern
+        matched_blobs = set(fnmatch.filter(all_blobs, pattern))
+        return [f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}" for
+                blob in matched_blobs]

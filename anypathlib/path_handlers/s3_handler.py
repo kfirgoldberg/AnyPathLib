@@ -1,3 +1,4 @@
+import fnmatch
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -216,3 +217,35 @@ class S3Handler(BasePathHandler):
                     future.result()  # If needed, handle result or exceptions here
                 except Exception as exc:
                     print(f'Operation generated an exception: {exc}')
+
+    @classmethod
+    def _get_bucket_objects(cls, url: str) -> List[str]:
+        bucket, key = cls.get_bucket_and_key_from_uri(url)
+        s3_resource = boto3.resource('s3')
+        bucket_obj = s3_resource.Bucket(bucket)
+        return [cls.get_full_path(bucket=bucket, key=obj.key) for obj in bucket_obj.objects.filter(Prefix=key)]
+
+    @classmethod
+    def iterdir(cls, url: str) -> List[str]:
+        objects = cls._get_bucket_objects(url)
+        return [obj for obj in objects if obj != url]
+
+    @classmethod
+    def glob(cls, url: str, pattern: str) -> List[str]:
+        objects = cls._get_bucket_objects(url)
+        return [obj for obj in objects if fnmatch.fnmatch(obj, f'{url.rstrip("/")}/{pattern}')]
+
+    @classmethod
+    def rglob(cls, url: str, pattern: str) -> List[str]:
+        """
+        Finds all the paths matching a specific pattern, including wildcards, and searches recursively in all subdirectories
+        """
+        objects = cls._get_bucket_objects(url)
+        matched_keys = []
+        for obj in objects:
+            if fnmatch.fnmatch(obj, f'{url.rstrip("/")}/{pattern}'):
+                matched_keys.append(obj)
+            relative_path = obj[len(url):].lstrip('/')
+            if any(fnmatch.fnmatch(part, pattern) for part in relative_path.split('/')):
+                matched_keys.append(obj)
+        return list(set(matched_keys))

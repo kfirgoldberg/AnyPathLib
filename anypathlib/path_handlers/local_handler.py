@@ -80,3 +80,15 @@ class LocalPathHandler(BasePathHandler):
     @classmethod
     def name(cls, url: str) -> str:
         return Path(url).name
+
+    @classmethod
+    def iterdir(cls, url: str) -> List[str]:
+        return [str(p) for p in Path(url).iterdir()]
+
+    @classmethod
+    def glob(cls, url: str, pattern: str) -> List[str]:
+        return [str(p) for p in Path(url).glob(pattern)]
+
+    @classmethod
+    def rglob(cls, url: str, pattern: str) -> List[str]:
+        return [str(p) for p in Path(url).rglob(pattern)]

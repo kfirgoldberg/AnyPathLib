@@ -74,3 +74,27 @@ class BasePathHandler(ABC):
     @abstractmethod
     def stem(cls, url: str) -> str:
         pass
+
+    @classmethod
+    @abstractmethod
+    def iterdir(cls, url: str) -> List[str]:
+        """
+        Lists all files and directories directly under the given directory
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def glob(cls, url: str, pattern: str) -> List[str]:
+        """
+        Finds all the paths matching a specific pattern, which can include wildcards, but does not search recursively
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def rglob(cls, url: str, pattern: str) -> List[str]:
+        """
+        Finds all the paths matching a specific pattern, including wildcards, and searches recursively in all subdirectories
+        """
+        pass

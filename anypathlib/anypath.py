@@ -108,6 +108,15 @@ class AnyPath:
     def name(self) -> str:
         return self.path_handler.name(self.base_path)
 
+    def iterdir(self) -> List['AnyPath']:
+        return [AnyPath(p) for p in self.path_handler.iterdir(self.base_path)]
+
+    def glob(self, pattern: str) -> List['AnyPath']:
+        return [AnyPath(p) for p in self.path_handler.glob(self.base_path, pattern)]
+
+    def rglob(self, pattern: str) -> List['AnyPath']:
+        return [AnyPath(p) for p in self.path_handler.rglob(self.base_path, pattern)]
+
     def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False,
                          verbose: bool = False) -> Optional[Path]:
         if target_path is None:
@@ -156,7 +165,8 @@ class AnyPath:
             local_cache_path.parent.mkdir(exist_ok=True, parents=True)
         return AnyPath(local_cache_path)
 
-    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True, verbose: bool = False) -> 'AnyPath':
+    def copy(self, target: Optional['AnyPath'] = None, force_overwrite: bool = True,
+             verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
         if target is None:
             valid_target = self.__get_local_cache_path()
