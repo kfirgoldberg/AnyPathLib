@@ -29,6 +29,17 @@ def temp_dir_with_files():
 
 
 @pytest.fixture
+def temp_nested_dir():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tmpdir = Path(tmpdirname)
+        nested = tempfile.TemporaryDirectory(dir=tmpdirname)
+        create_files_in_directory(tmpdir)
+        create_files_in_directory(Path(nested.name))
+        yield tmpdir, [fn for fn in tmpdir.iterdir() if fn.is_file()], [fn for fn in Path(nested.name).iterdir() if
+                                                                        fn.is_file()]
+
+
+@pytest.fixture
 def temp_local_dir():
     with tempfile.TemporaryDirectory() as tmpdirname:
         yield Path(tmpdirname)

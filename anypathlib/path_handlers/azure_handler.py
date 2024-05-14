@@ -372,36 +372,36 @@ class AzureHandler(BasePathHandler):
         return Path(blob_name).stem
 
     @classmethod
-    def _list_blobs(cls, azure_storage_path: AzureStoragePath, all_blobs: bool = False) -> List[str]:
+    def _list_blobs(cls, azure_storage_path: AzureStoragePath) -> List[str]:
         blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
         container_client = blob_service_client.get_container_client(azure_storage_path.container_name)
-        if all_blobs:
-            return [blob.name for blob in container_client.list_blobs()]
-        else:
-            return [blob.name for blob in container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)]
+        # if all_blobs:
+        #     return [blob.name for blob in container_client.list_blobs()]
+        # else:
+        return [blob for blob in container_client.list_blob_names(name_starts_with=azure_storage_path.blob_name)]
 
     @classmethod
     def iterdir(cls, url: str) -> List[str]:
+        return cls.glob(url, pattern='*')
+
+    @classmethod
+    def get_blobs_matching_pattern(cls, url: str, pattern: str) -> List[str]:
         storage_path = cls.http_to_storage_params(url)
         blobs = cls._list_blobs(storage_path)
-        unique_directories = list(
-            set([f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}"
-                 for blob in blobs]))
-        return list(unique_directories)
+        all_blobs = [
+            f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}" for
+            blob in blobs]
+        matched_blobs = [blob for blob in all_blobs if fnmatch.fnmatch(blob, pattern)]
+        return matched_blobs
 
     @classmethod
     def glob(cls, url: str, pattern: str) -> List[str]:
-        storage_path = cls.http_to_storage_params(url)
-        blobs = cls._list_blobs(storage_path)
-        matched_blobs = [blob for blob in blobs if fnmatch.fnmatch(blob, f"{storage_path.blob_name}/{pattern}")]
-        return [f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}" for
-                blob in matched_blobs]
+        matched_blobs = cls.get_blobs_matching_pattern(url, pattern)
+        # filter blobs that start with url/*/* to keep only blobs in top level
+        top_level_blobs = [blob for blob in matched_blobs if blob.count('/') == url.rstrip('/').count('/') + 1]
+        return top_level_blobs
 
     @classmethod
     def rglob(cls, url: str, pattern: str) -> List[str]:
-        storage_path = cls.http_to_storage_params(url)
-        all_blobs = cls._list_blobs(storage_path, all_blobs=True)
-        pattern = f"{storage_path.blob_name}/**/{pattern}"  # Using globstar for recursive pattern
-        matched_blobs = set(fnmatch.filter(all_blobs, pattern))
-        return [f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}" for
-                blob in matched_blobs]
+        matched_blobs = cls.get_blobs_matching_pattern(url, pattern)
+        return matched_blobs

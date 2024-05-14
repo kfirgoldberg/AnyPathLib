@@ -183,8 +183,8 @@ class S3Handler(BasePathHandler):
 
         for root, dirs, files in progress_bar:
             for file in files:
-                local_path = os.path.join(root, file)
-                s3_key = f'{key}/{os.path.relpath(local_path, local_dir)}'
+                local_path = Path(root) / file
+                s3_key = f'{key.rstrip("/")}/{local_path.relative_to(local_dir).as_posix()}'
                 cls.s3_client.upload_file(local_path, bucket, s3_key)
 
             if verbose:
@@ -227,13 +227,14 @@ class S3Handler(BasePathHandler):
 
     @classmethod
     def iterdir(cls, url: str) -> List[str]:
-        objects = cls._get_bucket_objects(url)
-        return [obj for obj in objects if obj != url]
+        return cls.glob(url, pattern='*')
 
     @classmethod
     def glob(cls, url: str, pattern: str) -> List[str]:
         objects = cls._get_bucket_objects(url)
-        return [obj for obj in objects if fnmatch.fnmatch(obj, f'{url.rstrip("/")}/{pattern}')]
+        matched_objects = [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
+        # return only top level matched objects
+        return [obj for obj in matched_objects if obj.count('/') == url.rstrip('/').count('/') + 1]
 
     @classmethod
     def rglob(cls, url: str, pattern: str) -> List[str]:
@@ -241,11 +242,4 @@ class S3Handler(BasePathHandler):
         Finds all the paths matching a specific pattern, including wildcards, and searches recursively in all subdirectories
         """
         objects = cls._get_bucket_objects(url)
-        matched_keys = []
-        for obj in objects:
-            if fnmatch.fnmatch(obj, f'{url.rstrip("/")}/{pattern}'):
-                matched_keys.append(obj)
-            relative_path = obj[len(url):].lstrip('/')
-            if any(fnmatch.fnmatch(part, pattern) for part in relative_path.split('/')):
-                matched_keys.append(obj)
-        return list(set(matched_keys))
+        return [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
