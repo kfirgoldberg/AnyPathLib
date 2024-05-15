@@ -90,9 +90,6 @@ class AnyPath:
     def exists(self) -> bool:
         return self.path_handler.exists(self.base_path)
 
-    def listdir(self) -> List['AnyPath']:
-        return [AnyPath(p) for p in self.path_handler.listdir(self.base_path)]
-
     def remove(self):
         self.path_handler.remove(self.base_path)
 

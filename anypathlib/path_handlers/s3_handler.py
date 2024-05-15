@@ -97,15 +97,6 @@ class S3Handler(BasePathHandler):
         return local_file_path
 
     @classmethod
-    def listdir(cls, url: str) -> List[str]:
-        bucket, key = cls.get_bucket_and_key_from_uri(url)
-        s3_resource = boto3.resource('s3')
-        bucket = s3_resource.Bucket(bucket)
-        items = [cls.get_full_path(bucket=bucket.name, key=obj.key) for obj in bucket.objects.filter(Prefix=key)]
-        items = [item for item in items if item != url]
-        return items
-
-    @classmethod
     def remove(cls, url: str):
         bucket, key = cls.get_bucket_and_key_from_uri(url)
         s3_resource = boto3.resource('s3')
@@ -230,11 +221,20 @@ class S3Handler(BasePathHandler):
         return cls.glob(url, pattern='*')
 
     @classmethod
+    def _get_dirs_under_url(cls, base_url: str, url_list: List[str]) -> List[str]:
+        all_dirs = list(set([cls.parent(url) for url in url_list]))
+        dirs_under_url = [dir.rstrip('/') for dir in all_dirs if dir.startswith(base_url) and dir != base_url]
+        return dirs_under_url
+
+    @classmethod
     def glob(cls, url: str, pattern: str) -> List[str]:
         objects = cls._get_bucket_objects(url)
         matched_objects = [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
         # return only top level matched objects
-        return [obj for obj in matched_objects if obj.count('/') == url.rstrip('/').count('/') + 1]
+        top_level_objects = [obj for obj in matched_objects if obj.count('/') == url.rstrip('/').count('/') + 1]
+        all_subdirs = cls._get_dirs_under_url(base_url=url, url_list=matched_objects)
+        subdirs_in_top_level = [dir for dir in all_subdirs if dir.count('/') == url.rstrip('/').count('/') + 1]
+        return top_level_objects + subdirs_in_top_level
 
     @classmethod
     def rglob(cls, url: str, pattern: str) -> List[str]:
@@ -242,4 +242,6 @@ class S3Handler(BasePathHandler):
         Finds all the paths matching a specific pattern, including wildcards, and searches recursively in all subdirectories
         """
         objects = cls._get_bucket_objects(url)
-        return [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
+        matched_objects = [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
+        dirs = cls._get_dirs_under_url(base_url=url, url_list=matched_objects)
+        return matched_objects + dirs

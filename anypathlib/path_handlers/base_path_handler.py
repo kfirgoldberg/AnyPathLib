@@ -9,10 +9,6 @@ class BasePathHandler(ABC):
     def download_file(cls, url: str, target_path: Path, force_overwrite: bool = True) -> Path:
         pass
 
-    @classmethod
-    @abstractmethod
-    def listdir(cls, url: str) -> List[str]:
-        pass
 
     @classmethod
     @abstractmethod

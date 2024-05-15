@@ -202,22 +202,6 @@ class AzureHandler(BasePathHandler):
             blob_client.upload_blob(data, overwrite=True)
 
     @classmethod
-    def listdir(cls, url: str, with_prefix: bool = True) -> List[str]:
-        """List a directory (all blobs with the same prefix) from Azure Blob Storage."""
-        azure_storage_path = cls.http_to_storage_params(url)
-        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
-        container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
-        blob_names = []
-        for blob in container_client.list_blobs(name_starts_with=azure_storage_path.blob_name):
-            blob_name = blob.name if with_prefix else blob.name.replace(azure_storage_path.blob_name, '')
-            blob_azure_path = AzureStoragePath(storage_account=azure_storage_path.storage_account,
-                                               container_name=azure_storage_path.container_name, blob_name=blob_name,
-                                               connection_string=azure_storage_path.connection_string)
-            blob_names.append(blob_azure_path.http_url)
-        items = [item for item in blob_names if item != url]
-        return items
-
-    @classmethod
     def remove_directory(cls, url: str):
         """Remove a directory (all blobs with the same prefix) from Azure Blob Storage."""
         azure_storage_path = cls.http_to_storage_params(url)
@@ -395,13 +379,21 @@ class AzureHandler(BasePathHandler):
         return matched_blobs
 
     @classmethod
+    def _get_dirs_under_url(cls, base_url: str, url_list: List[str]) -> List[str]:
+        all_dirs = list(set([cls.parent(url) for url in url_list]))
+        dirs_under_url = [dir.rstrip('/') for dir in all_dirs if dir.startswith(base_url) and dir != base_url]
+        return dirs_under_url
+
+    @classmethod
     def glob(cls, url: str, pattern: str) -> List[str]:
         matched_blobs = cls.get_blobs_matching_pattern(url, pattern)
         # filter blobs that start with url/*/* to keep only blobs in top level
         top_level_blobs = [blob for blob in matched_blobs if blob.count('/') == url.rstrip('/').count('/') + 1]
-        return top_level_blobs
+        dirs_under_url = cls._get_dirs_under_url(base_url=url, url_list=matched_blobs)
+        return top_level_blobs + dirs_under_url
 
     @classmethod
     def rglob(cls, url: str, pattern: str) -> List[str]:
         matched_blobs = cls.get_blobs_matching_pattern(url, pattern)
-        return matched_blobs
+        dirs_under_url = cls._get_dirs_under_url(base_url=url, url_list=matched_blobs)
+        return matched_blobs + dirs_under_url
