@@ -78,6 +78,23 @@ my_file.is_dir()  # False
 my_file.remove()
 ```
 
+### CLI Usage
+
+`AnyPathLib` also comes with a CLI tool that allows you to perform file operations from the command line.
+You can run `anypathlib --help` to get a list of available commands and options.
+
+Here are some examples:
+
+Copy:
+```bash
+anypathlib copy -i /path/to/source -o /path/to/destination
+```
+
+Remove a file or directory:
+```bash
+anypathlib remove -p /path/to/file_or_directory
+```
+
 ### Key Features
 
 * **Unified, Cloud Agnostic, API**: Perform file operations across different storage backends using the same set of
