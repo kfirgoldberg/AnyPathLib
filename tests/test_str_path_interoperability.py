@@ -26,5 +26,5 @@ def test_copy_targets(path_type: PathType, target_type, temp_dir_with_files, tem
     remote_dir = clean_remote_dir
     cloud_handler.upload_directory(local_dir=local_dir_path, target_url=remote_dir, verbose=False)
     local_download_dir = AnyPath(remote_dir).copy(target=temp_local_dir, force_overwrite=True)
-    remote_files = AnyPath(remote_dir).listdir()
-    assert sorted([fn.name for fn in remote_files]) == sorted([fn.name for fn in local_download_dir.listdir()])
+    remote_files = AnyPath(remote_dir).rglob('*')
+    assert sorted([fn.name for fn in remote_files]) == sorted([fn.name for fn in local_download_dir.rglob('*')])

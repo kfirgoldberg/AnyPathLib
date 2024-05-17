@@ -28,9 +28,9 @@ def exists(path):
 
 @click.command()
 @click.option('-p', 'path', required=True, type=click.STRING, help='Path to list')
-def listdir(path):
+def iterdir(path):
     """List the directory. """
-    click.echo(AnyPath(path).listdir())
+    click.echo(AnyPath(path).iterdir())
 
 
 @click.command()
@@ -42,7 +42,7 @@ def remove(path):
 
 cli.add_command(copy)
 cli.add_command(exists)
-cli.add_command(listdir)
+cli.add_command(iterdir)
 cli.add_command(remove)
 
 if __name__ == '__main__':

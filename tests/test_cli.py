@@ -51,9 +51,9 @@ def test_exists_command_false(temp_dir_with_files, cli_runner):
 
 
 @pytest.mark.usefixtures("temp_dir_with_files", 'cli_runner')
-def test_listdir_command_with_files(temp_dir_with_files, cli_runner):
+def test_iterdir_command_with_files(temp_dir_with_files, cli_runner):
     local_dir_path, local_dir_files = temp_dir_with_files
-    result = cli_runner.invoke(cli, ['listdir', '-p', local_dir_path])
+    result = cli_runner.invoke(cli, ['iterdir', '-p', local_dir_path])
     assert result.exit_code == 0
 
     for file in local_dir_files:
@@ -61,8 +61,8 @@ def test_listdir_command_with_files(temp_dir_with_files, cli_runner):
 
 
 @pytest.mark.usefixtures("temp_local_dir", 'cli_runner')
-def test_listdir_command_empty(temp_local_dir, cli_runner):
-    result = cli_runner.invoke(cli, ['listdir', '-p', temp_local_dir])
+def test_iterdir_command_empty(temp_local_dir, cli_runner):
+    result = cli_runner.invoke(cli, ['iterdir', '-p', temp_local_dir])
     assert result.exit_code == 0
     assert result.output.strip() == '[]'
 
