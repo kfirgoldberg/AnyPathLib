@@ -5,7 +5,10 @@ import pytest
 from pathlib import Path
 import tempfile
 
+from click.testing import CliRunner
+
 from anypathlib import PathType
+
 from tests.tests_urls import PATH_TYPE_TO_BASE_TEST_PATH, PATH_TYPE_TO_HANDLER
 
 
@@ -56,3 +59,8 @@ def clean_remote_dir(request, path_type: PathType):
     cloud_handler.remove(remote_dir)
     yield remote_dir
     cloud_handler.remove(remote_dir)
+
+
+@pytest.fixture
+def cli_runner():
+    return CliRunner()

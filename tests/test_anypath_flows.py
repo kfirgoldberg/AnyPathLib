@@ -67,4 +67,7 @@ def test_caching(path_type: PathType, temp_dir_with_files, clean_remote_dir, ver
     cloud_handler.upload_directory(local_dir=local_dir_path, target_url=remote_dir, verbose=verbose)
     target1 = AnyPath(remote_dir).copy(target=None, force_overwrite=False, verbose=verbose)
     target2 = AnyPath(remote_dir).copy(target=None, force_overwrite=False, verbose=verbose)
+    target1.remove()
+    if target2.exists():
+        target2.remove()
     assert target1.base_path == target2.base_path
