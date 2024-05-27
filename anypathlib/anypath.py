@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path, PurePath
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List, Dict, NewType
 from urllib.parse import urlparse
 
 from anypathlib.path_handlers.azure_handler import AzureHandler
@@ -10,6 +10,8 @@ from anypathlib.path_handlers.local_handler import LocalPathHandler
 from anypathlib.path_handlers.path_types import PathType
 from anypathlib.path_handlers.s3_handler import S3Handler
 
+AnyPathLikeType = NewType('AnyPathLikeType', Union[str, Path, 'AnyPath'])
+
 
 class AnyPath:
     PATH_HANDLERS: Dict[PathType, BasePathHandler] = {PathType.local: LocalPathHandler,
@@ -17,7 +19,7 @@ class AnyPath:
                                                       PathType.azure: AzureHandler}
     LOCAL_CACHE_PATH = Path(tempfile.gettempdir()) / 'AnyPath'
 
-    def __init__(self, base_path: Union[Path, str, 'AnyPath']):
+    def __init__(self, base_path: AnyPathLikeType):
         if type(base_path) is str:
             self._base_path = base_path
         elif issubclass(type(base_path), PurePath):
@@ -166,13 +168,18 @@ class AnyPath:
             local_cache_path.parent.mkdir(exist_ok=True, parents=True)
         return AnyPath(local_cache_path)
 
-    def copy(self, target: Optional[Union[str, Path, 'AnyPath']] = None, force_overwrite: bool = True,
+    def copy(self, target: Optional[AnyPathLikeType] = None, force_overwrite: bool = True,
              verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
         if target is None:
             valid_target = self.__get_local_cache_path()
         else:
-            valid_target = AnyPath(target)
+            input_target = AnyPath(target)
+            # if source is a file and target is either an existing dir copy the file to the target dir
+            if self.is_file() and input_target.is_dir():
+                valid_target = input_target / self.name
+            else:
+                valid_target = input_target
         if valid_target.is_local:
             self.__get_local_path(target_path=Path(valid_target.base_path), force_overwrite=force_overwrite,
                                   verbose=verbose)
