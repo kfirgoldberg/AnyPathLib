@@ -24,6 +24,7 @@ class AzureStoragePath:
     container_name: str
     blob_name: str
     connection_string: Optional[str] = None
+    connection_timeout: int = 20 # seconds
 
     def __post_init__(self):
         if self.connection_string is None:
@@ -198,7 +199,7 @@ class AzureHandler(BasePathHandler):
         blob_client = blob_service_client.get_blob_client(container=azure_storage_path.container_name,
                                                           blob=azure_storage_path.blob_name)
         with open(local_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
+            blob_client.upload_blob(data, overwrite=True, connection_timeout=azure_storage_path.connection_timeout)
 
     @classmethod
     def listdir(cls, url: str, with_prefix: bool = True) -> List[str]:
