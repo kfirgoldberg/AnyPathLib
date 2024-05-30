@@ -359,9 +359,6 @@ class AzureHandler(BasePathHandler):
     def _list_blobs(cls, azure_storage_path: AzureStoragePath) -> List[str]:
         blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
         container_client = blob_service_client.get_container_client(azure_storage_path.container_name)
-        # if all_blobs:
-        #     return [blob.name for blob in container_client.list_blobs()]
-        # else:
         return [blob for blob in container_client.list_blob_names(name_starts_with=azure_storage_path.blob_name)]
 
     @classmethod
