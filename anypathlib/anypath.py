@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path, PurePath
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List, Dict, NewType
 from urllib.parse import urlparse
 
 from anypathlib.path_handlers.azure_handler import AzureHandler
@@ -10,6 +10,8 @@ from anypathlib.path_handlers.local_handler import LocalPathHandler
 from anypathlib.path_handlers.path_types import PathType
 from anypathlib.path_handlers.s3_handler import S3Handler
 
+AnyPathLikeType = NewType('AnyPathLikeType', Union[str, Path, 'AnyPath'])
+
 
 class AnyPath:
     PATH_HANDLERS: Dict[PathType, BasePathHandler] = {PathType.local: LocalPathHandler,
@@ -17,7 +19,7 @@ class AnyPath:
                                                       PathType.azure: AzureHandler}
     LOCAL_CACHE_PATH = Path(tempfile.gettempdir()) / 'AnyPath'
 
-    def __init__(self, base_path: Union[Path, str, 'AnyPath']):
+    def __init__(self, base_path: AnyPathLikeType):
         if type(base_path) is str:
             self._base_path = base_path
         elif issubclass(type(base_path), PurePath):
@@ -166,7 +168,7 @@ class AnyPath:
             local_cache_path.parent.mkdir(exist_ok=True, parents=True)
         return AnyPath(local_cache_path)
 
-    def copy(self, target: Optional[Union[str, Path, 'AnyPath']] = None, force_overwrite: bool = True,
+    def copy(self, target: Optional[AnyPathLikeType] = None, force_overwrite: bool = True,
              verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
         if target is None:
