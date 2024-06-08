@@ -5,8 +5,7 @@ from fixtures_anypath import temp_dir_with_files, clean_remote_dir, temp_nested_
 
 
 @pytest.mark.usefixtures("temp_nested_dir", "clean_remote_dir")
-# @pytest.mark.parametrize("path_type", [PathType.local, PathType.azure, PathType.s3])
-@pytest.mark.parametrize("path_type", [PathType.azure, PathType.s3])
+@pytest.mark.parametrize("path_type", [PathType.local, PathType.azure, PathType.s3])
 def test_rglob_glob_iterdir(path_type: PathType, temp_nested_dir, clean_remote_dir):
     cloud_handler = PATH_TYPE_TO_HANDLER[path_type]
     local_dir_path, local_files_top_level, local_nested_files = temp_nested_dir
