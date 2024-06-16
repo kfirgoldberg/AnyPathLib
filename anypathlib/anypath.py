@@ -96,9 +96,6 @@ class AnyPath:
     def exists(self) -> bool:
         return self.path_handler.exists(self.base_path)
 
-    def listdir(self) -> List['AnyPath']:
-        return [AnyPath(p) for p in self.path_handler.listdir(self.base_path)]
-
     def remove(self):
         self.path_handler.remove(self.base_path)
 
@@ -113,6 +110,15 @@ class AnyPath:
     @property
     def name(self) -> str:
         return self.path_handler.name(self.base_path)
+
+    def iterdir(self) -> List['AnyPath']:
+        return [AnyPath(p) for p in self.path_handler.iterdir(self.base_path)]
+
+    def glob(self, pattern: str) -> List['AnyPath']:
+        return [AnyPath(p) for p in self.path_handler.glob(self.base_path, pattern)]
+
+    def rglob(self, pattern: str) -> List['AnyPath']:
+        return [AnyPath(p) for p in self.path_handler.rglob(self.base_path, pattern)]
 
     def __get_local_path(self, target_path: Optional[Path] = None, force_overwrite: bool = False,
                          verbose: bool = False) -> Optional[Path]:

@@ -70,7 +70,7 @@ local_file_path = my_file.copy(force_overwrite=False)  # Returns the path of the
 my_dir = AnyPath("https://account_name.blob.core.windows.net/container_name/path/to/dir")
 my_dir.exists()  # True if my_path exists, otherwise False
 parent, name, stem = my_dir.parent, my_dir.name, my_dir.stem
-files_in_dir: List[AnyPath] = my_dir.listdir()  # List of AnyPath instances for files in the directory
+files_in_dir: List[AnyPath] = my_dir.rglob('*')  # List of AnyPath instances for files in the directory
 
 my_file = AnyPath("s3://bucket/path/to/file.txt")
 my_file.is_file()  # True if my_path exists, otherwise False

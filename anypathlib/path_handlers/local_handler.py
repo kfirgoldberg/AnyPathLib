@@ -62,10 +62,6 @@ class LocalPathHandler(BasePathHandler):
         return cls.copy_path(url=url, target_path=target_path, force_overwrite=force_overwrite)
 
     @classmethod
-    def listdir(cls, url: str) -> List[str]:
-        return [str(p) for p in Path(url).rglob('*')]
-
-    @classmethod
     def relative_path(cls, url: str) -> str:
         return Path(url).relative_to(Path(url).anchor).as_posix()
 
@@ -80,3 +76,15 @@ class LocalPathHandler(BasePathHandler):
     @classmethod
     def name(cls, url: str) -> str:
         return Path(url).name
+
+    @classmethod
+    def iterdir(cls, url: str) -> List[str]:
+        return [str(p) for p in Path(url).iterdir()]
+
+    @classmethod
+    def glob(cls, url: str, pattern: str) -> List[str]:
+        return [str(p) for p in Path(url).glob(pattern)]
+
+    @classmethod
+    def rglob(cls, url: str, pattern: str) -> List[str]:
+        return [str(p) for p in Path(url).rglob(pattern)]
