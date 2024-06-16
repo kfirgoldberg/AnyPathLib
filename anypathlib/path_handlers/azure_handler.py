@@ -1,8 +1,7 @@
 import fnmatch
 import os
-import shutil
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Tuple
 from urllib.parse import urlparse
@@ -12,7 +11,7 @@ from azure.core.exceptions import ResourceNotFoundError
 
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.storage import StorageManagementClient
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
 
 from loguru import logger
 
@@ -25,20 +24,38 @@ class AzureStoragePath:
     container_name: str
     blob_name: str
     connection_string: Optional[str] = None
+    _blob_service_client: Optional[BlobServiceClient] = field(init=False, default=None)
+    _container_client: Optional[ContainerClient] = field(init=False, default=None)
 
     def __post_init__(self):
         if self.connection_string is None:
             self.connection_string = AzureHandler.get_connection_string(self.storage_account)
+        self._container_client = None
+        self._blob_service_client = None
 
     @property
     def http_url(self) -> str:
-        return f'https://{self.storage_account}.blob.core.windows.net/{self.container_name}/{self.blob_name}'
+        return f'https://{self.storage_account}.{AzureHandler.AZURE_URL_SUFFIX}/{self.container_name}/{self.blob_name}'
+
+    @property
+    def blob_service_client(self) -> BlobServiceClient:
+        if self._blob_service_client is None:
+            self._blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+        return self._blob_service_client
+
+    @property
+    def container_client(cls) -> ContainerClient:
+        if cls._container_client is None:
+            cls._container_client = cls.blob_service_client.get_container_client(cls.container_name)
+
+        return cls._container_client
 
 
 class AzureHandler(BasePathHandler):
     DEFAULT_SUBSCRIPTION_ID = os.environ.get('AZURE_SUBSCRIPTION_ID', None)
 
     DEFAULT_GROUP_NAME = os.environ.get('AZURE_RESOURCE_GROUP_NAME', None)
+    AZURE_URL_SUFFIX = r'blob.core.windows.net'
 
     @classmethod
     def refresh_credentials(cls):
@@ -59,9 +76,7 @@ class AzureHandler(BasePathHandler):
     @classmethod
     def is_file(cls, url: str) -> bool:
         storage_path = cls.http_to_storage_params(url)
-        blob_service_client = BlobServiceClient(
-            account_url=f"https://{storage_path.storage_account}.blob.core.windows.net")
-        container_client = blob_service_client.get_container_client(storage_path.container_name)
+        container_client = storage_path.container_client
         blob_client = container_client.get_blob_client(storage_path.blob_name)
 
         try:
@@ -74,9 +89,7 @@ class AzureHandler(BasePathHandler):
     @classmethod
     def exists(cls, url: str) -> bool:
         storage_path = cls.http_to_storage_params(url)
-
-        blob_service_client = BlobServiceClient.from_connection_string(storage_path.connection_string)
-        container_client = blob_service_client.get_container_client(container=storage_path.container_name)
+        container_client = storage_path.container_client
         return len([p for p in container_client.list_blobs(name_starts_with=storage_path.blob_name)]) > 0
 
     @classmethod
@@ -166,7 +179,7 @@ class AzureHandler(BasePathHandler):
         azure_storage_path = cls.http_to_storage_params(url)
         # Construct the Blob Service Client
         blob_service_client = BlobServiceClient(
-            account_url=f"https://{azure_storage_path.storage_account}.blob.core.windows.net")
+            account_url=f"https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}")
 
         # Get a client to interact with the specified container and blob
         blob_client = blob_service_client.get_blob_client(container=azure_storage_path.container_name,
@@ -183,12 +196,11 @@ class AzureHandler(BasePathHandler):
 
     @classmethod
     def upload_file(cls, local_path: str, target_url: str):
-        azure_storage_path = cls.http_to_storage_params(target_url)
         """Upload a single file to Azure Blob Storage."""
-        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
-
+        azure_storage_path = cls.http_to_storage_params(target_url)
+        blob_service_client = azure_storage_path.blob_service_client
+        container_client = azure_storage_path.container_client
         # Check if the container exists and create if it does not
-        container_client = blob_service_client.get_container_client(azure_storage_path.container_name)
         try:
             container_client.get_container_properties()
         except Exception as e:
@@ -205,8 +217,7 @@ class AzureHandler(BasePathHandler):
     def remove_directory(cls, url: str):
         """Remove a directory (all blobs with the same prefix) from Azure Blob Storage."""
         azure_storage_path = cls.http_to_storage_params(url)
-        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
-        container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
+        container_client = azure_storage_path.container_client
         for blob in container_client.list_blobs(name_starts_with=azure_storage_path.blob_name):
             container_client.delete_blob(blob.name)
 
@@ -217,8 +228,7 @@ class AzureHandler(BasePathHandler):
             cls.remove_directory(url)
         else:
             azure_storage_path = cls.http_to_storage_params(url)
-            blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
-            container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
+            container_client = azure_storage_path.container_client
             try:
                 container_client.delete_blob(azure_storage_path.blob_name)
             except ResourceNotFoundError as e:
@@ -232,8 +242,7 @@ class AzureHandler(BasePathHandler):
         assert target_dir.is_dir()
         azure_storage_path = cls.http_to_storage_params(url)
 
-        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
-        container_client = blob_service_client.get_container_client(container=azure_storage_path.container_name)
+        container_client = azure_storage_path.container_client
         local_paths = []
 
         if verbose:
@@ -259,9 +268,8 @@ class AzureHandler(BasePathHandler):
     def upload_directory(cls, local_dir: Path, target_url: str, verbose: bool):
         """Upload a directory to Azure Blob Storage."""
         azure_storage_path = cls.http_to_storage_params(target_url)
-        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
         # Check if the container exists and create if it does not
-        container_client = blob_service_client.get_container_client(azure_storage_path.container_name)
+        container_client = azure_storage_path.container_client
         try:
             container_client.get_container_properties()
         except Exception as e:
@@ -269,12 +277,11 @@ class AzureHandler(BasePathHandler):
             container_client.create_container()
 
         def upload_file_wrapper(local_path: str, blob_name: str):
-            azure_url = rf'azure://{azure_storage_path.storage_account}/{azure_storage_path.container_name}/{blob_name}'
+            azure_url = rf'https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{azure_storage_path.container_name}/{blob_name}'
             cls.upload_file(local_path=local_path, target_url=azure_url)
 
         # Collect all files to upload
         files_to_upload = []
-        # for file_path in local_dir.iterdir():
         for file_path in local_dir.rglob('*'):
             if not file_path.is_file():
                 continue
@@ -299,13 +306,8 @@ class AzureHandler(BasePathHandler):
         source_storage_path = cls.http_to_storage_params(source_url)
         target_storage_path = cls.http_to_storage_params(target_url)
 
-        source_blob_service_client = BlobServiceClient.from_connection_string(
-            source_storage_path.connection_string)
-        target_blob_service_client = BlobServiceClient.from_connection_string(
-            target_storage_path.connection_string)
-
-        source_container_client = source_blob_service_client.get_container_client(
-            source_storage_path.container_name)
+        target_blob_service_client = target_storage_path.blob_service_client
+        source_container_client = source_storage_path.container_client
 
         blobs_to_rename = source_container_client.list_blobs(name_starts_with=source_storage_path.blob_name)
 
@@ -334,7 +336,7 @@ class AzureHandler(BasePathHandler):
         if blob_path_parts[-1] == "":
             blob_path_parts = blob_path_parts[:-1]
         blob_path = '/'.join(blob_path_parts[:-1])
-        parent_url = f'https://{account_name}.blob.core.windows.net/{container_name}/{blob_path}/'
+        parent_url = f'https://{account_name}.{cls.AZURE_URL_SUFFIX}/{container_name}/{blob_path}/'
         return parent_url
 
     @classmethod
@@ -356,44 +358,30 @@ class AzureHandler(BasePathHandler):
         return Path(blob_name).stem
 
     @classmethod
-    def _list_blobs(cls, azure_storage_path: AzureStoragePath) -> List[str]:
-        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
-        container_client = blob_service_client.get_container_client(azure_storage_path.container_name)
-        # if all_blobs:
-        #     return [blob.name for blob in container_client.list_blobs()]
-        # else:
-        return [blob for blob in container_client.list_blob_names(name_starts_with=azure_storage_path.blob_name)]
-
-    @classmethod
     def iterdir(cls, url: str) -> List[str]:
         return cls.glob(url, pattern='*')
 
     @classmethod
-    def get_blobs_matching_pattern(cls, url: str, pattern: str) -> List[str]:
+    def glob(cls, url: str, pattern: str) -> List[str]:
         storage_path = cls.http_to_storage_params(url)
-        blobs = cls._list_blobs(storage_path)
+        container_client = storage_path.container_client
+        blob_names = [blob.name for blob in
+                      container_client.walk_blobs(name_starts_with=storage_path.blob_name, delimiter='/')]
         all_blobs = [
-            f"https://{storage_path.storage_account}.blob.core.windows.net/{storage_path.container_name}/{blob}" for
-            blob in blobs]
+            f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}" for
+            blob in blob_names]
         matched_blobs = [blob for blob in all_blobs if fnmatch.fnmatch(blob, pattern)]
         return matched_blobs
 
     @classmethod
-    def _get_dirs_under_url(cls, base_url: str, url_list: List[str]) -> List[str]:
-        all_dirs = list(set([cls.parent(url) for url in url_list]))
-        dirs_under_url = [dir.rstrip('/') for dir in all_dirs if dir.startswith(base_url) and dir != base_url]
-        return dirs_under_url
-
-    @classmethod
-    def glob(cls, url: str, pattern: str) -> List[str]:
-        matched_blobs = cls.get_blobs_matching_pattern(url, pattern)
-        # filter blobs that start with url/*/* to keep only blobs in top level
-        top_level_blobs = [blob for blob in matched_blobs if blob.count('/') == url.rstrip('/').count('/') + 1]
-        dirs_under_url = cls._get_dirs_under_url(base_url=url, url_list=matched_blobs)
-        return top_level_blobs + dirs_under_url
-
-    @classmethod
     def rglob(cls, url: str, pattern: str) -> List[str]:
-        matched_blobs = cls.get_blobs_matching_pattern(url, pattern)
-        dirs_under_url = cls._get_dirs_under_url(base_url=url, url_list=matched_blobs)
+        storage_path = cls.http_to_storage_params(url)
+        container_client = storage_path.container_client
+        blobs = [blob for blob in container_client.list_blob_names(name_starts_with=storage_path.blob_name)]
+        all_blobs = [
+            f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}" for
+            blob in blobs]
+        matched_blobs = [blob for blob in all_blobs if fnmatch.fnmatch(blob, pattern)]
+        all_dirs = list(set([cls.parent(url) for url in matched_blobs]))
+        dirs_under_url = [dir.rstrip('/') for dir in all_dirs if dir.startswith(url) and dir != url]
         return matched_blobs + dirs_under_url

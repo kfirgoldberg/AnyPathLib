@@ -40,9 +40,6 @@ def temp_nested_dir():
         create_files_in_directory(Path(nested.name))
         yield tmpdir, list(tmpdir.iterdir()), list(Path(nested.name).iterdir())
 
-        # yield tmpdir, [fn for fn in tmpdir.iterdir() if fn.is_file()], [fn for fn in Path(nested.name).iterdir() if
-        #                                                                 fn.is_file()]
-
 
 @pytest.fixture
 def temp_local_dir():
