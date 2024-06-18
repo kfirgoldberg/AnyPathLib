@@ -134,11 +134,11 @@ export AWS_ACCESS_KEY_ID="your-key"
 
 - [ ] Improve API
 
-> Add support for file-to-dir in copy
+> Add __open__ method for reading files, etc.
 
 - [ ] Implement cloud-to-cloud ops more efficiently.
 
-> For example, s3->azure can use AZCopy
+> cache azure credentials to avoid repeated logins
 
 - [ ] Improve logging and add verbose mode.
 

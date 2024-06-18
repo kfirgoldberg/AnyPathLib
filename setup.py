@@ -42,8 +42,8 @@ setuptools.setup(
         "azure-identity>=1.15.0",
         "azure-mgmt-storage>=21.1.0",
         "boto3>=1.34.23",
-        "loguru>=0.7.2",
-        "tqdm>=4.66.2",
+        "loguru",
+        "tqdm",
         'Click'
     ],
     setup_requires=["pre-commit"],
