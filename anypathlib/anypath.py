@@ -174,7 +174,12 @@ class AnyPath:
         if target is None:
             valid_target = self.__get_local_cache_path()
         else:
-            valid_target = AnyPath(target)
+            input_target = AnyPath(target)
+            # if source is a file and target is either an existing dir copy the file to the target dir
+            if self.is_file() and input_target.is_dir():
+                valid_target = input_target / self.name
+            else:
+                valid_target = input_target
         if valid_target.is_local:
             self.__get_local_path(target_path=Path(valid_target.base_path), force_overwrite=force_overwrite,
                                   verbose=verbose)
