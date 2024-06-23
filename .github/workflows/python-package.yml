@@ -36,5 +36,9 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Run Tests
+      env:
+        ANYPATH_S3_TEST_URL: ${{ secrets.ANYPATH_S3_TEST_URL }}
+        ANYPATH_AZURE_TEST_URL: ${{ secrets.ANYPATH_AZURE_TEST_URL }}
+        ANYPATH_LOCAL_TEST_URL: ${{ secrets.ANYPATH_LOCAL_TEST_URL }}
       run: |
-        pytest tests/
+        pytest --color=yes tests/ 
