@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from anypathlib.cli import cli
-from tests.fixtures_anypath import temp_dir_with_files, cli_runner, temp_local_dir
+from tests.conftest import temp_dir_with_files, cli_runner, temp_local_dir
 
 FOLDER_NAME = 'folder'
 

@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 
 from anypathlib import AnyPath, PathType
-from fixtures_anypath import temp_local_dir, temp_dir_with_files, clean_remote_dir
 from tests.tests_urls import PATH_TYPE_TO_HANDLER
 
 
