@@ -35,6 +35,14 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Azure Authentication
+      env:
+            AZURE_APP_ID: ${{ secrets.AZURE_APP_ID }}
+            AZURE_APP_PASSWORD: ${{ secrets.AZURE_APP_PASSWORD }}
+            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      run: |
+            az login --service-principal -u=$AZURE_APP_ID -p=$AZURE_APP_PASSWORD --tenant=$AZURE_TENANT_ID
+            azd auth login --client-id=$AZURE_APP_ID --client-secret=$AZURE_APP_PASSWORD --tenant-id=$AZURE_TENANT_ID
     - name: Run Tests
       env:
         ANYPATH_S3_TEST_URL: ${{ secrets.ANYPATH_S3_TEST_URL }}
@@ -44,10 +52,5 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         AZURE_RESOURCE_GROUP_NAME: ${{ secrets.AZURE_RESOURCE_GROUP_NAME }}
-        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-        AZURE_APP_ID: ${{ secrets.AZURE_APP_ID }}
-        AZURE_APP_PASSWORD: ${{ secrets.AZURE_APP_PASSWORD }}
       run: |
-        az login --service-principal -u=$AZURE_APP_ID -p=$AZURE_APP_PASSWORD --tenant=$AZURE_TENANT_ID
-        azd auth login --client-id=$AZURE_APP_ID --client-secret=$AZURE_APP_PASSWORD --tenant-id=$AZURE_TENANT_ID
         pytest --color=yes tests/ 
