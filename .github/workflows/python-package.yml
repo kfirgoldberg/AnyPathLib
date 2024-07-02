@@ -37,8 +37,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Azure Authentication
       run: |
-            az login --service-principal -u=${{ secrets.AZURE_APP_ID }} -p= ${{ secrets.AZURE_APP_PASSWORD }} --tenant=${{ secrets.AZURE_TENANT_ID }}
-            azd auth login --client-id=${{ secrets.AZURE_APP_ID }} --client-secret=${{ secrets.AZURE_APP_PASSWORD }} --tenant-id=${{ secrets.AZURE_TENANT_ID }}
+            az login --service-principal -u=${{secrets.AZURE_APP_ID}} -p=${{secrets.AZURE_APP_PASSWORD}} --tenant=${{secrets.AZURE_TENANT_ID}}
+            azd auth login --client-id=${{secrets.AZURE_APP_ID}} --client-secret=${{secrets.AZURE_APP_PASSWORD}} --tenant-id=${{secrets.AZURE_TENANT_ID}}
     - name: Run Tests
       env:
         ANYPATH_S3_TEST_URL: ${{ secrets.ANYPATH_S3_TEST_URL }}
