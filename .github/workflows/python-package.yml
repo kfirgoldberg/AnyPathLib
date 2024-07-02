@@ -38,6 +38,7 @@ jobs:
     - name: Azure Authentication
       run: |
             az login --service-principal -u=${{secrets.AZURE_APP_ID}} -p=${{secrets.AZURE_APP_PASSWORD}} --tenant=${{secrets.AZURE_TENANT_ID}}
+            curl -fsSL https://aka.ms/install-azd.sh | bash
             azd auth login --client-id=${{secrets.AZURE_APP_ID}} --client-secret=${{secrets.AZURE_APP_PASSWORD}} --tenant-id=${{secrets.AZURE_TENANT_ID}}
     - name: Run Tests
       env:
