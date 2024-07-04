@@ -52,7 +52,8 @@ def clean_remote_dir(request, path_type: PathType):
     test_name = request.node.name
     remote_base_dir = PATH_TYPE_TO_BASE_TEST_PATH[path_type]
     cloud_handler = PATH_TYPE_TO_HANDLER[path_type]
-    remote_dir = f"{remote_base_dir}{test_name}/"
+    random_str = ''.join(random.choices(string.ascii_letters, k=7))
+    remote_dir = f"{remote_base_dir}{test_name}_{random_str}/"
     cloud_handler.remove(remote_dir)
     yield remote_dir
     cloud_handler.remove(remote_dir)
