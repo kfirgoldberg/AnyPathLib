@@ -1,7 +1,6 @@
 import pytest
 from anypathlib import PathType, AnyPath
 from tests.tests_urls import PATH_TYPE_TO_HANDLER
-from fixtures_anypath import temp_dir_with_files, clean_remote_dir, temp_nested_dir
 
 
 @pytest.mark.usefixtures("temp_nested_dir", "clean_remote_dir")

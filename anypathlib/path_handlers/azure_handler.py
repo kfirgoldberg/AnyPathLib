@@ -178,8 +178,11 @@ class AzureHandler(BasePathHandler):
             return target_path
         azure_storage_path = cls.http_to_storage_params(url)
         # Construct the Blob Service Client
+        token_credential = DefaultAzureCredential()
+
         blob_service_client = BlobServiceClient(
-            account_url=f"https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}")
+            account_url=f"https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}",
+            credential=token_credential, )
 
         # Get a client to interact with the specified container and blob
         blob_client = blob_service_client.get_blob_client(container=azure_storage_path.container_name,
