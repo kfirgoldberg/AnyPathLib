@@ -2,7 +2,7 @@ import pytest
 
 from anypathlib import PathType, AnyPath
 from tests.tests_urls import PATH_TYPE_TO_HANDLER
-from fixtures_anypath import temp_dir_with_files, clean_remote_dir
+from tests.fixtures_anypath import temp_dir_with_files, clean_remote_dir
 
 
 @pytest.mark.usefixtures("temp_dir_with_files", "clean_remote_dir")
@@ -10,15 +10,16 @@ from fixtures_anypath import temp_dir_with_files, clean_remote_dir
 def test_exists_copy_exists_rglob_remove_exists(path_type: PathType, temp_dir_with_files, clean_remote_dir):
     remote_base_dir = clean_remote_dir
     local_dir_path, local_dir_files = temp_dir_with_files
-    remote_dir = remote_base_dir + 'test_exists_copy_exists_rglob_remove_exists/'
+    remote_dir = remote_base_dir + "test_exists_copy_exists_rglob_remove_exists/"
     local_any_path = AnyPath(local_dir_path)
     target_any_path = AnyPath(remote_dir)
     assert not target_any_path.exists()
     local_any_path.copy(target=target_any_path, force_overwrite=True)
     assert target_any_path.exists()
-    target_dir_files = target_any_path.rglob('*')
+    target_dir_files = target_any_path.rglob("*")
     assert sorted([remote_file.name for remote_file in target_dir_files]) == sorted(
-        [local_dir_file.name for local_dir_file in local_dir_files])
+        [local_dir_file.name for local_dir_file in local_dir_files]
+    )
     target_any_path.remove()
     assert not target_any_path.exists()
 
@@ -45,7 +46,7 @@ def test_is_file(path_type: PathType, temp_dir_with_files, clean_remote_dir):
     local_dir_path, local_dir_files = temp_dir_with_files
     local_file = local_dir_files[0]
     remote_dir = clean_remote_dir
-    remote_file = f'{remote_dir}/{local_file.name}'
+    remote_file = f"{remote_dir}/{local_file.name}"
     remote_file_any_path = AnyPath(remote_file)
     assert not remote_file_any_path.is_dir()
     assert not remote_file_any_path.is_file()

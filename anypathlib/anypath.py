@@ -201,3 +201,9 @@ class AnyPath:
                 else:
                     target_path_handler.upload_file(local_path=str(local_path), target_url=valid_target.base_path)
         return valid_target
+
+    def __eq__(self, other: 'AnyPath') -> bool:
+        return self.base_path == other.base_path
+    
+    def str(self):
+        return self.base_path

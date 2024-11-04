@@ -17,6 +17,8 @@ from loguru import logger
 
 from anypathlib.path_handlers.base_path_handler import BasePathHandler
 
+CONNECTION_STRINGS_CACHE = {}
+
 
 @dataclass
 class AzureStoragePath:
@@ -29,13 +31,17 @@ class AzureStoragePath:
 
     def __post_init__(self):
         if self.connection_string is None:
-            self.connection_string = AzureHandler.get_connection_string(self.storage_account)
+            if self.storage_account in CONNECTION_STRINGS_CACHE:
+                self.connection_string = CONNECTION_STRINGS_CACHE[self.storage_account]
+            else:
+                self.connection_string = AzureHandler.get_connection_string(self.storage_account)
+                CONNECTION_STRINGS_CACHE[self.storage_account] = self.connection_string
         self._container_client = None
         self._blob_service_client = None
 
     @property
     def http_url(self) -> str:
-        return f'https://{self.storage_account}.{AzureHandler.AZURE_URL_SUFFIX}/{self.container_name}/{self.blob_name}'
+        return f"https://{self.storage_account}.{AzureHandler.AZURE_URL_SUFFIX}/{self.container_name}/{self.blob_name}"
 
     @property
     def blob_service_client(self) -> BlobServiceClient:
@@ -52,22 +58,22 @@ class AzureStoragePath:
 
 
 class AzureHandler(BasePathHandler):
-    DEFAULT_SUBSCRIPTION_ID = os.environ.get('AZURE_SUBSCRIPTION_ID', None)
+    DEFAULT_SUBSCRIPTION_ID = os.environ.get("AZURE_SUBSCRIPTION_ID", None)
 
-    DEFAULT_GROUP_NAME = os.environ.get('AZURE_RESOURCE_GROUP_NAME', None)
-    AZURE_URL_SUFFIX = r'blob.core.windows.net'
+    DEFAULT_GROUP_NAME = os.environ.get("AZURE_RESOURCE_GROUP_NAME", None)
+    AZURE_URL_SUFFIX = r"blob.core.windows.net"
 
     @classmethod
     def refresh_credentials(cls):
         if cls.DEFAULT_SUBSCRIPTION_ID is None:
-            cls.DEFAULT_SUBSCRIPTION_ID = os.environ.get('AZURE_SUBSCRIPTION_ID', None)
+            cls.DEFAULT_SUBSCRIPTION_ID = os.environ.get("AZURE_SUBSCRIPTION_ID", None)
         if cls.DEFAULT_GROUP_NAME is None:
-            cls.DEFAULT_GROUP_NAME = os.environ.get('AZURE_RESOURCE_GROUP_NAME', None)
+            cls.DEFAULT_GROUP_NAME = os.environ.get("AZURE_RESOURCE_GROUP_NAME", None)
 
     @classmethod
     def relative_path(cls, url: str) -> str:
         storage_path = cls.http_to_storage_params(url)
-        return f'{storage_path.container_name}/{storage_path.blob_name}'
+        return f"{storage_path.container_name}/{storage_path.blob_name}"
 
     @classmethod
     def is_dir(cls, url: str) -> bool:
@@ -82,7 +88,7 @@ class AzureHandler(BasePathHandler):
         try:
             blob_properties = blob_client.get_blob_properties()
             # If the blob exists and is not a directory placeholder, it's a file
-            return not blob_properties.metadata.get('hdi_isfolder', False)
+            return not blob_properties.metadata.get("hdi_isfolder", False)
         except Exception:
             return False  # If exception is raised, the blob does not exist or is not a file
 
@@ -93,32 +99,40 @@ class AzureHandler(BasePathHandler):
         return len([p for p in container_client.list_blobs(name_starts_with=storage_path.blob_name)]) > 0
 
     @classmethod
-    def get_connection_string(cls, storage_account: str, subscription_id: Optional[str] = None,
-                              resource_group_name: Optional[str] = None) -> str:
+    def get_connection_string(
+        cls, storage_account: str, subscription_id: Optional[str] = None, resource_group_name: Optional[str] = None
+    ) -> str:
         cls.refresh_credentials()
-        account_key = cls.get_storage_account_key(storage_account_name=storage_account, subscription_id=subscription_id,
-                                                  resource_group_name=resource_group_name)
-        connection_string = (f"DefaultEndpointsProtocol=https;AccountName={storage_account};"
-                             f"AccountKey={account_key};EndpointSuffix=core.windows.net")
+        account_key = cls.get_storage_account_key(
+            storage_account_name=storage_account,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+        )
+        connection_string = (
+            f"DefaultEndpointsProtocol=https;AccountName={storage_account};"
+            f"AccountKey={account_key};EndpointSuffix=core.windows.net"
+        )
         return connection_string
 
     @classmethod
     def http_to_storage_params(cls, url: str) -> AzureStoragePath:
         parsed_url = urlparse(url)
-        account_name = parsed_url.netloc.split('.')[0]
-        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
-        blob_path = '/'.join(blob_path_parts)
+        account_name = parsed_url.netloc.split(".")[0]
+        container_name, *blob_path_parts = parsed_url.path.lstrip("/").split("/")
+        blob_path = "/".join(blob_path_parts)
 
-        azure_storage_path = AzureStoragePath(storage_account=account_name, container_name=container_name,
-                                              blob_name=blob_path)
+        azure_storage_path = AzureStoragePath(
+            storage_account=account_name, container_name=container_name, blob_name=blob_path
+        )
         return azure_storage_path
 
     @classmethod
-    def get_storage_account_key(cls,
-                                storage_account_name: str,
-                                subscription_id: Optional[str] = None,
-                                resource_group_name: Optional[str] = None,
-                                ) -> str:
+    def get_storage_account_key(
+        cls,
+        storage_account_name: str,
+        subscription_id: Optional[str] = None,
+        resource_group_name: Optional[str] = None,
+    ) -> str:
         """
         Retrieves the access key for a storage account in Azure.
 
@@ -150,8 +164,10 @@ class AzureHandler(BasePathHandler):
                         """
                     )
             client = StorageManagementClient(credential=DefaultAzureCredential(), subscription_id=subscription_id)
-            response = client.storage_accounts.list_keys(resource_group_name=resource_group_name,
-                                                         account_name=storage_account_name, )
+            response = client.storage_accounts.list_keys(
+                resource_group_name=resource_group_name,
+                account_name=storage_account_name,
+            )
             if not response.keys:
                 raise ValueError(
                     """
@@ -178,12 +194,12 @@ class AzureHandler(BasePathHandler):
             return target_path
         azure_storage_path = cls.http_to_storage_params(url)
         # Construct the Blob Service Client
-        blob_service_client = BlobServiceClient(
-            account_url=f"https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}")
+        blob_service_client = BlobServiceClient.from_connection_string(azure_storage_path.connection_string)
 
         # Get a client to interact with the specified container and blob
-        blob_client = blob_service_client.get_blob_client(container=azure_storage_path.container_name,
-                                                          blob=azure_storage_path.blob_name)
+        blob_client = blob_service_client.get_blob_client(
+            container=azure_storage_path.container_name, blob=azure_storage_path.blob_name
+        )
 
         # Ensure the directory exists
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -208,8 +224,9 @@ class AzureHandler(BasePathHandler):
             container_client.create_container()
 
         # Now, upload the file
-        blob_client = blob_service_client.get_blob_client(container=azure_storage_path.container_name,
-                                                          blob=azure_storage_path.blob_name)
+        blob_client = blob_service_client.get_blob_client(
+            container=azure_storage_path.container_name, blob=azure_storage_path.blob_name
+        )
         with open(local_path, "rb") as data:
             blob_client.upload_blob(data, overwrite=True)
 
@@ -224,7 +241,7 @@ class AzureHandler(BasePathHandler):
     @classmethod
     def remove(cls, url: str, allow_missing: bool = False):
         """Remove a single file/directory from Azure Blob Storage."""
-        if url.endswith('/'):
+        if url.endswith("/"):
             cls.remove_directory(url)
         else:
             azure_storage_path = cls.http_to_storage_params(url)
@@ -236,8 +253,9 @@ class AzureHandler(BasePathHandler):
                     raise e
 
     @classmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool) -> \
-            Optional[Tuple[Path, List[Path]]]:
+    def download_directory(
+        cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool
+    ) -> Optional[Tuple[Path, List[Path]]]:
         """Download a directory (all blobs with the same prefix) from Azure Blob Storage."""
         assert target_dir.is_dir()
         azure_storage_path = cls.http_to_storage_params(url)
@@ -247,18 +265,20 @@ class AzureHandler(BasePathHandler):
 
         if verbose:
             container_iterator = container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)
-            progress_bar = tqdm(container_iterator, desc='Downloading directory',
-                                total=len(list(container_iterator)))
+            progress_bar = tqdm(container_iterator, desc="Downloading directory", total=len(list(container_iterator)))
         else:
             progress_bar = container_client.list_blobs(name_starts_with=azure_storage_path.blob_name)
 
         for blob in progress_bar:
-            blob_url = AzureStoragePath(storage_account=azure_storage_path.storage_account,
-                                        container_name=azure_storage_path.container_name, blob_name=blob.name,
-                                        connection_string=azure_storage_path.connection_string).http_url
+            blob_url = AzureStoragePath(
+                storage_account=azure_storage_path.storage_account,
+                container_name=azure_storage_path.container_name,
+                blob_name=blob.name,
+                connection_string=azure_storage_path.connection_string,
+            ).http_url
             local_target = target_dir / Path(blob_url).relative_to(Path(url))
             local_path = cls.download_file(url=blob_url, force_overwrite=force_overwrite, target_path=local_target)
-            assert local_path is not None, f'could not download from {url}'
+            assert local_path is not None, f"could not download from {url}"
             local_paths.append(Path(local_path))
         if len(local_paths) == 0:
             return None
@@ -277,12 +297,12 @@ class AzureHandler(BasePathHandler):
             container_client.create_container()
 
         def upload_file_wrapper(local_path: str, blob_name: str):
-            azure_url = rf'https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{azure_storage_path.container_name}/{blob_name}'
+            azure_url = rf"https://{azure_storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{azure_storage_path.container_name}/{blob_name}"
             cls.upload_file(local_path=local_path, target_url=azure_url)
 
         # Collect all files to upload
         files_to_upload = []
-        for file_path in local_dir.rglob('*'):
+        for file_path in local_dir.rglob("*"):
             if not file_path.is_file():
                 continue
             blob_name = os.path.join(azure_storage_path.blob_name, file_path.relative_to(local_dir))
@@ -290,10 +310,12 @@ class AzureHandler(BasePathHandler):
 
         # Upload files in parallel
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(upload_file_wrapper, str(local_path), blob_name) for local_path, blob_name in
-                       files_to_upload]
+            futures = [
+                executor.submit(upload_file_wrapper, str(local_path), blob_name)
+                for local_path, blob_name in files_to_upload
+            ]
             if verbose:
-                with tqdm(total=len(files_to_upload), desc='Uploading directory') as pbar:
+                with tqdm(total=len(files_to_upload), desc="Uploading directory") as pbar:
                     for future in futures:
                         future.result()  # Wait for each upload to complete
                         pbar.update(1)
@@ -312,14 +334,18 @@ class AzureHandler(BasePathHandler):
         blobs_to_rename = source_container_client.list_blobs(name_starts_with=source_storage_path.blob_name)
 
         def copy_blob(blob):
-            source_blob_url = AzureStoragePath(storage_account=source_storage_path.storage_account,
-                                               container_name=source_storage_path.container_name, blob_name=blob.name,
-                                               connection_string=source_storage_path.connection_string).http_url
+            source_blob_url = AzureStoragePath(
+                storage_account=source_storage_path.storage_account,
+                container_name=source_storage_path.container_name,
+                blob_name=blob.name,
+                connection_string=source_storage_path.connection_string,
+            ).http_url
             target_blob_name = blob.name.replace(source_storage_path.blob_name, target_storage_path.blob_name, 1)
 
             # Copy to new location
-            target_blob = target_blob_service_client.get_blob_client(container=target_storage_path.container_name,
-                                                                     blob=target_blob_name)
+            target_blob = target_blob_service_client.get_blob_client(
+                container=target_storage_path.container_name, blob=target_blob_name
+            )
             target_blob.start_copy_from_url(source_blob_url)
 
         # Execute copy and delete operations in parallel
@@ -331,18 +357,18 @@ class AzureHandler(BasePathHandler):
     @classmethod
     def parent(cls, url: str) -> str:
         parsed_url = urlparse(url)
-        account_name = parsed_url.netloc.split('.')[0]
-        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
+        account_name = parsed_url.netloc.split(".")[0]
+        container_name, *blob_path_parts = parsed_url.path.lstrip("/").split("/")
         if blob_path_parts[-1] == "":
             blob_path_parts = blob_path_parts[:-1]
-        blob_path = '/'.join(blob_path_parts[:-1])
-        parent_url = f'https://{account_name}.{cls.AZURE_URL_SUFFIX}/{container_name}/{blob_path}/'
+        blob_path = "/".join(blob_path_parts[:-1])
+        parent_url = f"https://{account_name}.{cls.AZURE_URL_SUFFIX}/{container_name}/{blob_path}/"
         return parent_url
 
     @classmethod
     def name(cls, url: str) -> str:
         parsed_url = urlparse(url)
-        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
+        container_name, *blob_path_parts = parsed_url.path.lstrip("/").split("/")
         if blob_path_parts[-1] == "":
             blob_path_parts = blob_path_parts[:-1]
         blob_name = blob_path_parts[-1]
@@ -351,7 +377,7 @@ class AzureHandler(BasePathHandler):
     @classmethod
     def stem(cls, url: str) -> str:
         parsed_url = urlparse(url)
-        container_name, *blob_path_parts = parsed_url.path.lstrip('/').split('/')
+        container_name, *blob_path_parts = parsed_url.path.lstrip("/").split("/")
         if blob_path_parts[-1] == "":
             blob_path_parts = blob_path_parts[:-1]
         blob_name = blob_path_parts[-1]
@@ -359,17 +385,19 @@ class AzureHandler(BasePathHandler):
 
     @classmethod
     def iterdir(cls, url: str) -> List[str]:
-        return cls.glob(url, pattern='*')
+        return cls.glob(url, pattern="*")
 
     @classmethod
     def glob(cls, url: str, pattern: str) -> List[str]:
         storage_path = cls.http_to_storage_params(url)
         container_client = storage_path.container_client
-        blob_names = [blob.name for blob in
-                      container_client.walk_blobs(name_starts_with=storage_path.blob_name, delimiter='/')]
+        blob_names = [
+            blob.name for blob in container_client.walk_blobs(name_starts_with=storage_path.blob_name, delimiter="/")
+        ]
         all_blobs = [
-            f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}" for
-            blob in blob_names]
+            f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}"
+            for blob in blob_names
+        ]
         matched_blobs = [blob for blob in all_blobs if fnmatch.fnmatch(blob, pattern)]
         return matched_blobs
 
@@ -379,9 +407,10 @@ class AzureHandler(BasePathHandler):
         container_client = storage_path.container_client
         blobs = [blob for blob in container_client.list_blob_names(name_starts_with=storage_path.blob_name)]
         all_blobs = [
-            f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}" for
-            blob in blobs]
+            f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}"
+            for blob in blobs
+        ]
         matched_blobs = [blob for blob in all_blobs if fnmatch.fnmatch(blob, pattern)]
         all_dirs = list(set([cls.parent(url) for url in matched_blobs]))
-        dirs_under_url = [dir.rstrip('/') for dir in all_dirs if dir.startswith(url) and dir != url]
+        dirs_under_url = [dir.rstrip("/") for dir in all_dirs if dir.startswith(url) and dir != url]
         return matched_blobs + dirs_under_url

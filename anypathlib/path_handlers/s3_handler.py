@@ -13,23 +13,25 @@ from anypathlib.path_handlers.base_path_handler import BasePathHandler
 
 
 class S3Handler(BasePathHandler):
-    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', None)
+    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", None)
     MAX_POOL_CONNECTIONS = 50
     # Create a boto3 S3 client
-    s3_client: ClassVar[boto3.client] = boto3.client('s3', config=botocore.config.Config(
-        max_pool_connections=MAX_POOL_CONNECTIONS))
+    s3_client: ClassVar[boto3.client] = boto3.client(
+        "s3", config=botocore.config.Config(max_pool_connections=MAX_POOL_CONNECTIONS)
+    )
 
     @classmethod
     def refresh_credentials(cls):
         if cls.AWS_ACCESS_KEY_ID is None:
-            cls.AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', None)
-            cls.s3_client = boto3.client('s3',
-                                         config=botocore.config.Config(max_pool_connections=cls.MAX_POOL_CONNECTIONS))
+            cls.AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", None)
+            cls.s3_client = boto3.client(
+                "s3", config=botocore.config.Config(max_pool_connections=cls.MAX_POOL_CONNECTIONS)
+            )
 
     @classmethod
     def relative_path(cls, url: str) -> str:
         bucket, key = cls.get_bucket_and_key_from_uri(url)
-        return f'{bucket}/{key}'
+        return f"{bucket}/{key}"
 
     @classmethod
     def is_dir(cls, url: str) -> bool:
@@ -63,8 +65,8 @@ class S3Handler(BasePathHandler):
     def exists(cls, url: str) -> bool:
         bucket, key = cls.get_bucket_and_key_from_uri(url)
         try:
-            resp = cls.s3_client.list_objects(Bucket=bucket, Prefix=key, Delimiter='/', MaxKeys=1)
-            return 'Contents' in resp or 'CommonPrefixes' in resp
+            resp = cls.s3_client.list_objects(Bucket=bucket, Prefix=key, Delimiter="/", MaxKeys=1)
+            return "Contents" in resp or "CommonPrefixes" in resp
         except cls.s3_client.exceptions.NoSuchKey:
             return False
 
@@ -72,14 +74,13 @@ class S3Handler(BasePathHandler):
     def get_bucket_and_key_from_uri(cls, s3_uri: str) -> Tuple[str, str]:
         parsed_uri = urlparse(s3_uri)
         bucket = parsed_uri.netloc
-        key = parsed_uri.path.lstrip('/')
+        key = parsed_uri.path.lstrip("/")
         cls.refresh_credentials()
         return bucket, key
 
     @classmethod
     def get_full_path(cls, bucket: str, key: str) -> str:
-
-        return f's3://{bucket}/{key}'
+        return f"s3://{bucket}/{key}"
 
     @classmethod
     def download_file(cls, url: str, target_path: Path, force_overwrite: bool = True) -> Path:
@@ -99,24 +100,25 @@ class S3Handler(BasePathHandler):
     @classmethod
     def remove(cls, url: str):
         bucket, key = cls.get_bucket_and_key_from_uri(url)
-        s3_resource = boto3.resource('s3')
+        s3_resource = boto3.resource("s3")
         bucket = s3_resource.Bucket(bucket)
         bucket.objects.filter(Prefix=key).delete()
 
     @classmethod
-    def download_directory(cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool) -> \
-            Optional[Tuple[Path, List[Path]]]:
-
-        s3_resource = boto3.resource('s3')
+    def download_directory(
+        cls, url: str, force_overwrite: bool, target_dir: Path, verbose: bool
+    ) -> Optional[Tuple[Path, List[Path]]]:
+        s3_resource = boto3.resource("s3")
 
         bucket, source_key = cls.get_bucket_and_key_from_uri(url)
         bucket = s3_resource.Bucket(bucket)
         all_files = []
 
         # Prepare the list of s3_paths to download
-        s3_paths: List[str] = [cls.get_full_path(bucket=bucket.name, key=obj.key) for obj in
-                               bucket.objects.filter(Prefix=source_key)]
-        s3_paths = [s3_path for s3_path in s3_paths if s3_path.rstrip('/') != url]
+        s3_paths: List[str] = [
+            cls.get_full_path(bucket=bucket.name, key=obj.key) for obj in bucket.objects.filter(Prefix=source_key)
+        ]
+        s3_paths = [s3_path for s3_path in s3_paths if s3_path.rstrip("/") != url]
 
         def s3_path_to_local_file_path(s3_path: str, local_base_path: Path) -> Path:
             _, key = cls.get_bucket_and_key_from_uri(s3_path)
@@ -125,11 +127,15 @@ class S3Handler(BasePathHandler):
 
         # Download in parallel
         with ThreadPoolExecutor() as executor:
-            future_to_s3_path = {executor.submit(cls.download_file,
-                                                 url=s3_path,
-                                                 target_path=s3_path_to_local_file_path(s3_path=s3_path,
-                                                                                        local_base_path=target_dir),
-                                                 force_overwrite=force_overwrite): s3_path for s3_path in s3_paths}
+            future_to_s3_path = {
+                executor.submit(
+                    cls.download_file,
+                    url=s3_path,
+                    target_path=s3_path_to_local_file_path(s3_path=s3_path, local_base_path=target_dir),
+                    force_overwrite=force_overwrite,
+                ): s3_path
+                for s3_path in s3_paths
+            }
 
             def process_futures():
                 for future in as_completed(future_to_s3_path):
@@ -139,12 +145,12 @@ class S3Handler(BasePathHandler):
                         if local_path:
                             all_files.append(local_path)
                     except Exception as exc:
-                        print(f'{s3_path} generated an exception: {exc}')
+                        print(f"{s3_path} generated an exception: {exc}")
 
                     yield None
 
             if verbose:
-                with tqdm(total=len(s3_paths), desc='Downloading directory') as pbar:
+                with tqdm(total=len(s3_paths), desc="Downloading directory") as pbar:
                     for _ in process_futures():
                         pbar.update(1)
             else:
@@ -168,7 +174,7 @@ class S3Handler(BasePathHandler):
                 total_files += len(files)
 
         if verbose:
-            progress_bar = tqdm(os.walk(local_dir), desc='Uploading directory', total=total_files)
+            progress_bar = tqdm(os.walk(local_dir), desc="Uploading directory", total=total_files)
         else:
             progress_bar = os.walk(local_dir)
 
@@ -183,7 +189,7 @@ class S3Handler(BasePathHandler):
 
     @classmethod
     def copy(cls, source_url: str, target_url: str):
-        s3_resource = boto3.resource('s3')
+        s3_resource = boto3.resource("s3")
         source_bucket_name, source_key = cls.get_bucket_and_key_from_uri(source_url)
         target_bucket_name, target_key = cls.get_bucket_and_key_from_uri(target_url)
 
@@ -192,10 +198,7 @@ class S3Handler(BasePathHandler):
 
         def copy_and_delete(obj):
             new_key = obj.key.replace(source_key, target_key, 1)
-            copy_source = {
-                'Bucket': source_bucket_name,
-                'Key': obj.key
-            }
+            copy_source = {"Bucket": source_bucket_name, "Key": obj.key}
             # Copy object to the new location
             s3_resource.meta.client.copy(copy_source, target_bucket_name, new_key)
 
@@ -207,41 +210,55 @@ class S3Handler(BasePathHandler):
                 try:
                     future.result()  # If needed, handle result or exceptions here
                 except Exception as exc:
-                    print(f'Operation generated an exception: {exc}')
+                    print(f"Operation generated an exception: {exc}")
 
     @classmethod
     def _get_bucket_objects(cls, url: str) -> List[str]:
         bucket, key = cls.get_bucket_and_key_from_uri(url)
-        s3_resource = boto3.resource('s3')
+        s3_resource = boto3.resource("s3")
         bucket_obj = s3_resource.Bucket(bucket)
         return [cls.get_full_path(bucket=bucket, key=obj.key) for obj in bucket_obj.objects.filter(Prefix=key)]
 
     @classmethod
-    def iterdir(cls, url: str) -> List[str]:
-        return cls.glob(url, pattern='*')
-
-    @classmethod
     def _get_dirs_under_url(cls, base_url: str, url_list: List[str]) -> List[str]:
-        all_dirs = list(set([cls.parent(url) for url in url_list]))
-        dirs_under_url = [dir.rstrip('/') for dir in all_dirs if dir.startswith(base_url) and dir != base_url]
+        all_dirs = []
+        for url in url_list:
+            curr_url = cls.parent(url)
+            while curr_url != base_url:
+                all_dirs.append(curr_url)
+                curr_url = cls.parent(curr_url)
+        all_dirs = set(all_dirs)
+        dirs_under_url = [dir.rstrip("/") for dir in all_dirs if dir.startswith(base_url) and dir != base_url]
         return dirs_under_url
 
     @classmethod
     def glob(cls, url: str, pattern: str) -> List[str]:
         objects = cls._get_bucket_objects(url)
         matched_objects = [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
-        # return only top level matched objects
-        top_level_objects = [obj for obj in matched_objects if obj.count('/') == url.rstrip('/').count('/') + 1]
+
+        # Remove the input URL from the matched objects
+        matched_objects = [obj for obj in matched_objects if obj.rstrip("/") != url.rstrip("/")]
+
+        # Filter for only top-level matched objects
+        top_level_objects = [obj for obj in matched_objects if obj.count("/") == url.rstrip("/").count("/") + 1]
         all_subdirs = cls._get_dirs_under_url(base_url=url, url_list=matched_objects)
-        subdirs_in_top_level = [dir for dir in all_subdirs if dir.count('/') == url.rstrip('/').count('/') + 1]
+        subdirs_in_top_level = [dir for dir in all_subdirs if dir.count("/") == url.rstrip("/").count("/") + 1]
+
         return top_level_objects + subdirs_in_top_level
 
     @classmethod
+    def iterdir(cls, url: str) -> List[str]:
+        return cls.glob(url, pattern="*")
+
+    @classmethod
     def rglob(cls, url: str, pattern: str) -> List[str]:
-        """
-        Finds all the paths matching a specific pattern, including wildcards, and searches recursively in all subdirectories
-        """
         objects = cls._get_bucket_objects(url)
         matched_objects = [obj for obj in objects if fnmatch.fnmatch(obj, pattern)]
+
+        # Remove the input URL from the matched objects
+        matched_objects = [obj for obj in matched_objects if obj.rstrip('/') != url.rstrip('/')]
+ 
+        # Include all matching objects and directories under the URL
         dirs = cls._get_dirs_under_url(base_url=url, url_list=matched_objects)
+ 
         return matched_objects + dirs
