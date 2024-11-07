@@ -171,6 +171,8 @@ class AnyPath:
     def copy(self, target: Optional[AnyPathLikeType] = None, force_overwrite: bool = True,
              verbose: bool = False) -> 'AnyPath':
         assert self.exists(), f'source path: {self.base_path} does not exist'
+        if target is None and self.is_local:
+            return self
         if target is None:
             valid_target = self.__get_local_cache_path()
         else:
