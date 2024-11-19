@@ -223,10 +223,10 @@ class S3Handler(BasePathHandler):
     def _get_dirs_under_url(cls, base_url: str, url_list: List[str]) -> List[str]:
         all_dirs = []
         for url in url_list:
-            curr_url = cls.parent(url)
-            while curr_url != base_url:
+            curr_url = cls.parent(url).rstrip("/")
+            while curr_url != base_url.rstrip("/"):
                 all_dirs.append(curr_url)
-                curr_url = cls.parent(curr_url)
+                curr_url = cls.parent(curr_url).rstrip("/")
         all_dirs = set(all_dirs)
         dirs_under_url = [dir.rstrip("/") for dir in all_dirs if dir.startswith(base_url) and dir != base_url]
         return dirs_under_url

@@ -28,6 +28,7 @@ class AnyPath:
             self._base_path = base_path.base_path
         else:
             raise ValueError(f'base_path must be of type str, Path or AnyPath, got {type(base_path)}')
+        self.base_path_cached = None
         self.path_type = self.get_path_type(self._base_path)
         self.path_handler = self.PATH_HANDLERS[self.path_type]
 
@@ -74,6 +75,9 @@ class AnyPath:
 
     @property
     def base_path(self) -> str:
+        if self.base_path_cached is not None:
+            return self.base_path_cached
+        
         if self.path_type == PathType.s3:
             base_path = self._base_path
             base_path = base_path.replace('//', '/')
@@ -83,8 +87,11 @@ class AnyPath:
                 base_path = base_path[:-1]
         elif self.path_type == PathType.local:
             base_path = Path(self._base_path).as_posix()
-        else:
+        elif self.path_type == PathType.azure:
             base_path = self._base_path
+        else:
+            raise ValueError(f'Unknown path type: {self.path_type}')
+        self.base_path_cached = base_path
         return base_path
 
     def is_dir(self) -> bool:
