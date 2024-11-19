@@ -391,8 +391,9 @@ class AzureHandler(BasePathHandler):
     def glob(cls, url: str, pattern: str) -> List[str]:
         storage_path = cls.http_to_storage_params(url)
         container_client = storage_path.container_client
+        blob_name = storage_path.blob_name if not cls.is_dir(url) else storage_path.blob_name.rstrip("/") + "/"
         blob_names = [
-            blob.name for blob in container_client.walk_blobs(name_starts_with=storage_path.blob_name, delimiter="/")
+            blob.name for blob in container_client.walk_blobs(name_starts_with=blob_name, delimiter="/")
         ]
         all_blobs = [
             f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}"
@@ -405,7 +406,8 @@ class AzureHandler(BasePathHandler):
     def rglob(cls, url: str, pattern: str) -> List[str]:
         storage_path = cls.http_to_storage_params(url)
         container_client = storage_path.container_client
-        blobs = [blob for blob in container_client.list_blob_names(name_starts_with=storage_path.blob_name)]
+        blob_name = storage_path.blob_name if not cls.is_dir(url) else storage_path.blob_name.rstrip("/") + "/"
+        blobs = [blob for blob in container_client.list_blob_names(name_starts_with=blob_name)]
         all_blobs = [
             f"https://{storage_path.storage_account}.{cls.AZURE_URL_SUFFIX}/{storage_path.container_name}/{blob}"
             for blob in blobs
